@@ -1,4 +1,5 @@
 import SideNav from '@/app/ui/dashboard/sidenav';
+import { Map } from '../ui/map';
 
 export default function Layout() {
     return (
@@ -12,7 +13,9 @@ export default function Layout() {
             <div className='bg-white rounded-2xl flex-1 overflow-auto z-0 p-4'>
                 <div className="h-full bg-gradient-to-br from-custom-blue to-custom-blue-light p-8 flex flex-col gap-8 rounded-2xl">
                     <div className="flex gap-8 flex-grow">
-                        <div className="bg-white rounded-2xl p-8 flex-grow"></div>
+                        <div className="bg-white rounded-2xl p-8 flex-grow">
+                            <Map/>
+                        </div>
                         <div className="bg-white rounded-2xl p-8 w-1/3"></div>
                     </div>
                     <div className="bg-white rounded-2xl p-8 flex-grow"></div>
