@@ -16,7 +16,7 @@ export function Map() {
             const map = new mapboxgl.Map({
                 container: mapRef.current, // Container ID
                 style: 'mapbox://styles/mapbox/satellite-v9', // Mapbox Satellite style URL
-                center: [-69.07215409231613, -24.269798502643763], // Initial position [lng, lat]
+                center: [-69.0834131270831, -24.2540593234207], // Initial position [lng, lat]
                 zoom: 14, // Initial zoom level
                 pitch: 70, // Pitch the map for a 3D effect
                 bearing: 90, // Rotate the map
