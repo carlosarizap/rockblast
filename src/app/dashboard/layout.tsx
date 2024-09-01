@@ -11,18 +11,24 @@ export default function Layout() {
 
             {/* Main content */}
             <div className='bg-white rounded-2xl flex-1 overflow-auto z-0 p-4'>
-                <div className="h-full bg-gradient-to-br from-custom-blue to-custom-blue-light p-8 flex flex-col gap-8 rounded-2xl">
-                    <div className=" h-[300px] flex gap-8 flex-grow">
-                        <div className="bg-white rounded-2xl flex-grow">
-                            <div className="h-full w-full">
+                <div className="h-full bg-gradient-to-br from-custom-blue to-custom-blue-light p-4 flex flex-col gap-4 rounded-2xl">
+                    <div className="flex gap-4 flex-grow">
+                        <div className="gap-4 flex-grow flex flex-col">
+                            {/* Map div with slightly more height */}
+                            <div className="rounded-2xl flex-[1.5] w-full">
                                 <Map />
                             </div>
+                            {/* "Hello" div with slightly less height */}
+                            <div className="rounded-2xl flex-[1] bg-white"></div>
                         </div>
                         <div className="bg-white rounded-2xl p-8 w-1/3"></div>
                     </div>
-                    <div className="bg-white rounded-2xl p-8 flex-grow"></div>
                 </div>
             </div>
+
+
+
+
         </div>
     );
 }
