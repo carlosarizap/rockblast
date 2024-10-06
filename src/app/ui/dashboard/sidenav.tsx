@@ -37,7 +37,7 @@ const Sidenav: React.FC = () => {
                 </div>
 
                 {/* Navigation Menu */}
-                <NavLinks />
+                <NavLinks role={role} /> {/* Pass role to NavLinks */}
             </div>
 
             {/* User Section */}

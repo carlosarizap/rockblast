@@ -1,12 +1,29 @@
-import SideNav from '@/app/ui/dashboard/sidenav';
-import { Map } from '../ui/map';
+"use client"; // Mark this component as a client component
 
-export default function Layout() {
+import { useSession } from 'next-auth/react';
+import { useRouter } from 'next/navigation'; // Use next/navigation instead of next/router
+import { useEffect } from 'react';
+import Sidenav from '../ui/dashboard/sidenav';
+
+const AccountsPage = () => {
+    const { data: session, status } = useSession();
+    const router = useRouter(); // Import from next/navigation
+    useEffect(() => {
+        if (status === 'authenticated' && session?.user?.role !== 'Admin') {
+            // Redirect non-admin users away
+            router.push('/dashboard');
+        }
+    }, [session, status, router]);
+
+    if (status === 'loading') {
+        return <p>Loading...</p>;
+    }
+
     return (
         <div className='flex h-screen'>
             {/* Sidenav on the left */}
             <div className='w-72 flex-none z-10 bg-white'>
-                <SideNav />
+                <Sidenav />
             </div>
 
             {/* Main content */}
@@ -20,3 +37,4 @@ export default function Layout() {
         </div>
     );
 }
+export default AccountsPage;
