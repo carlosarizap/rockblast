@@ -1,6 +1,8 @@
+'use client'
 import React from 'react';
 import Image from 'next/image';
 import NavLinks from '@/app/dashboard/nav-links';
+import { signOut } from 'next-auth/react'; // Import signOut from next-auth
 
 const Sidenav: React.FC = () => {
     return (
@@ -25,7 +27,7 @@ const Sidenav: React.FC = () => {
             <div className="p-4 bg-custom-blue rounded-lg">
                 <div className="flex items-center mb-4">
                     <img
-                        src="https://z-p3-scontent.fscl25-1.fna.fbcdn.net/v/t39.30808-6/455258203_122163611030162240_2950077318646452528_n.jpg?_nc_cat=105&ccb=1-7&_nc_sid=6ee11a&_nc_eui2=AeEIhhdNDRUufU48TBq3JvMI7RZvd7IG8ZntFm93sgbxmagDHyH_pj_r2qNyxfEMfzqeMz4_lcj_iq2B4-uT9OEq&_nc_ohc=q2UdVcDJ7VoQ7kNvgHArtUv&_nc_zt=23&_nc_ht=z-p3-scontent.fscl25-1.fna&oh=00_AYBZepA9aBtBzA7MLnDVYm9d5BDmy3mtEzkBBOieYnaFRg&oe=66D14EE1" // Reemplaza con la URL de la imagen del usuario
+                        src="https://media.licdn.com/dms/image/v2/D4E03AQEZCM8tEt27yQ/profile-displayphoto-shrink_800_800/profile-displayphoto-shrink_800_800/0/1694824323632?e=1733961600&v=beta&t=y9Lru7SEriMnbKKNmOX8_fdPtOcrR1PxvwIC7g0SjQs" // Replace with the correct user image URL
                         alt="Admin"
                         className="w-10 h-10 rounded-full mr-3"
                     />
@@ -34,11 +36,15 @@ const Sidenav: React.FC = () => {
                         <p className="text-xs text-gray-200">Admin</p>
                     </div>
                 </div>
-                <button className="w-full bg-white text-custom-blue font-bold py-2 rounded">
+
+                {/* Sign Out Button */}
+                <button
+                    onClick={() => signOut()} // Trigger signOut from NextAuth
+                    className="w-full bg-white text-custom-blue font-bold py-2 rounded"
+                >
                     Cerrar sesión
                 </button>
             </div>
-
         </aside>
     );
 };

@@ -4,7 +4,7 @@ import { usePathname } from 'next/navigation';
 import clsx from 'clsx';
 
 const links = [
-  { name: 'Inicio', href: '' },
+  { name: 'Inicio', href: 'dashboard' },
   { name: 'Sensores', href: 'sensors' },
   { name: 'Cuentas', href: 'accounts' }
 ];
@@ -22,7 +22,7 @@ export default function NavLinks() {
             'my-2 flex h-[48px] grow items-center justify-center rounded-md p-3 text-sm text-gray-700 transition-colors hover:bg-custom-blue hover:text-white md:flex-none md:justify-start md:p-2 md:px-3',
             {
               'bg-custom-blue text-white font-semibold':
-                pathname === '/' + link.href || 
+                pathname === '/' + link.href ||
                 (pathname === '' && link.href === ''),
             }
           )}
