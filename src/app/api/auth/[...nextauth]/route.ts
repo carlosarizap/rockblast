@@ -5,9 +5,9 @@ import bcrypt from "bcryptjs";
 
 // Setup your PostgreSQL connection
 const pool = new Pool({
-  connectionString: process.env.DATABASE_URL, // Ensure your .env file has the correct DATABASE_URL
+  connectionString: process.env.DATABASE_URL,
   ssl: {
-    rejectUnauthorized: false, // If you're using a server with SSL
+    rejectUnauthorized: false,
   },
 });
 
@@ -17,11 +17,11 @@ const handler = NextAuth({
     CredentialsProvider({
       name: "Credentials",
       credentials: {
-        rut: { label: "RUT", type: "text", placeholder: "Ingrese su RUT" }, // Updated field to accept RUT
+        rut: { label: "RUT", type: "text", placeholder: "Ingrese su RUT" },
         password: { label: "Contraseña", type: "password", placeholder: "Ingrese su contraseña" },
       },
       async authorize(credentials) {
-        if (!credentials || !credentials.rut || !credentials.password) {
+        if (!credentials?.rut || !credentials.password) {
           throw new Error("RUT o contraseña inválidos");
         }
 
@@ -29,31 +29,31 @@ const handler = NextAuth({
 
         const client = await pool.connect();
         try {
-          // Fetch user from PostgreSQL using RUT instead of email
           const result = await client.query(
-            "SELECT * FROM tb_usuarios WHERE rut_usuario = $1", // Query by RUT
+            `SELECT u.*, r.nombre_roles 
+             FROM tb_usuarios u
+             JOIN tb_roles r ON u.id_rol_usuario = r.id_roles
+             WHERE u.rut_usuario = $1`,
             [rut]
           );
 
           if (result.rowCount === 0) {
-            // If user is not found
             throw new Error("No se encontró al usuario");
           }
 
           const user = result.rows[0];
-
-          // Check if the password matches
           const isValid = await bcrypt.compare(password, user.pass_usuario);
 
           if (!isValid) {
             throw new Error("La contraseña es incorrecta");
           }
 
-          // Return the user object (omit sensitive info like password)
           return {
             id: user.rut_usuario,
             name: `${user.nombres_usuario} ${user.apellidos_usuario}`,
-            email: user.correo_usuario, // You can still return email if needed
+            email: user.correo_usuario,
+            role: user.nombre_roles, // Include role
+            image: user.foto_perfil,
           };
         } finally {
           client.release();
@@ -63,6 +63,22 @@ const handler = NextAuth({
   ],
   session: {
     strategy: "jwt", // Use JWT for session handling
+  },
+  callbacks: {
+    async session({ session, token }) {
+      if (session?.user) {
+        session.user.id = token.id as string;
+        session.user.role = token.role as string; // Add role from token
+      }
+      return session;
+    },
+    async jwt({ token, user }) {
+      if (user) {
+        token.id = user.id;
+        token.role = user.role; // Persist role in token
+      }
+      return token;
+    },
   },
   pages: {
     signIn: "/auth/signin", // Custom login page
