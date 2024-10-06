@@ -1,7 +1,7 @@
 'use client';
 
 import { useSession } from 'next-auth/react';
-import { useRouter } from 'next/navigation'; // Use next/navigation instead of next/router
+import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import Sidenav from '../ui/dashboard/sidenav';
 import Table from '../ui/accounts/table';
@@ -31,16 +31,23 @@ const AccountsPage = () => {
   }
 
   return (
-    <div className='flex h-screen'>
-      <div className='w-72 flex-none z-10 bg-white'>
+    <div className="flex h-screen">
+      {/* Sidenav on the left */}
+      <div className="w-72 flex-none z-10 bg-white">
         <Sidenav />
       </div>
-      <div className='bg-white rounded-2xl flex-1 overflow-auto z-0 p-4'>
-        <h5 className="mb-4">Cuentas</h5>
-        <Table users={users} />
+
+      {/* Main content */}
+      <div className="flex-1 flex flex-col h-screen overflow-auto p-4">
+        <div className="h-full bg-gradient-to-br from-custom-blue to-custom-blue-light p-6 rounded-2xl flex flex-col">
+          <h1 className="text-white text-2xl font-bold mb-6">Gestión de Cuentas</h1>
+          <div className="bg-white p-1 rounded-xl flex-1 overflow-auto"> {/* Added flex-1 to make this expand */}
+            <Table users={users} />
+          </div>
+        </div>
       </div>
     </div>
   );
-}
+};
 
 export default AccountsPage;
