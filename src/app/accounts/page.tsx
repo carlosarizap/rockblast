@@ -13,16 +13,16 @@ const AccountsPage = () => {
   const router = useRouter();
   const [users, setUsers] = useState<User[]>([]);
 
+  const fetchUsers = async () => {
+    const response = await fetch('/api/users');
+    const data = await response.json();
+    setUsers(data);
+  };
+
   useEffect(() => {
     if (status === 'authenticated' && session?.user?.role !== 'Admin') {
       router.push('/dashboard');
     }
-
-    const fetchUsers = async () => {
-      const response = await fetch('/api/users');
-      const data = await response.json();
-      setUsers(data);
-    };
 
     fetchUsers();
   }, [session, status, router]);
@@ -47,7 +47,7 @@ const AccountsPage = () => {
             <CreateButton href="/accounts/create" label="Crear Usuario" /> {/* Custom button */}
           </div>
           <div className="bg-white p-1 rounded-xl flex-1 overflow-auto">
-            <Table users={users} />
+            <Table users={users} onUserDeleted={fetchUsers} /> {/* Pass the fetchUsers function to Table */}
           </div>
         </div>
       </div>
