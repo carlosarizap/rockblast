@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { createUser, getAllUsers, deleteUserByRut } from '@/app/lib/actions/user-actions'; // Add deleteUserByRut
+import { createUser, getAllUsers, deleteUserByRut, updateUserByRut, getUserByRut} from '@/app/lib/actions/user-actions'; // Add deleteUserByRut
 
 // Handle GET requests to fetch all users
 export async function GET() {
@@ -36,3 +36,6 @@ export async function POST(req: Request) {
     return NextResponse.json({ message: 'Error creating user' }, { status: 500 });
   }
 }
+
+
+
