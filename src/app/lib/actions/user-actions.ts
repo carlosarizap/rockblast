@@ -41,3 +41,18 @@ export const createUser = async (userData: User & { pass_usuario: string }): Pro
     client.release();
   }
 };
+
+export const deleteUserByRut = async (rut_usuario: string): Promise<boolean> => {
+  const client = await pool.connect();
+  try {
+    const result = await client.query('DELETE FROM tb_usuarios WHERE rut_usuario = $1', [rut_usuario]);
+
+    console.log("rut_usuario", rut_usuario)
+
+    // Ensure rowCount is not null and greater than 0
+    return (typeof result.rowCount === 'number' && result.rowCount > 0);
+  } finally {
+    client.release();
+  }
+};
+

@@ -1,5 +1,3 @@
-'use client';
-
 import { User } from '@/app/lib/definitions/user';
 import Status from '@/app/ui/components/status'; // Import the Status component
 import { DeleteButton } from '@/app/ui/components/buttons/delete-button'; // Import DeleteButton
@@ -7,9 +5,10 @@ import { UpdateButton } from '@/app/ui/components/buttons/update-button'; // Imp
 
 interface UsersTableProps {
   users: User[];
+  onUserDeleted: () => void; // callback to refresh the table when a user is deleted
 }
 
-const Table: React.FC<UsersTableProps> = ({ users }) => {
+const Table: React.FC<UsersTableProps> = ({ users, onUserDeleted }) => {
   return (
     <div className="overflow-x-auto rounded-lg border border-gray-200 w-full h-full">
       <table className="min-w-full bg-white border-collapse overflow-hidden">
@@ -41,7 +40,7 @@ const Table: React.FC<UsersTableProps> = ({ users }) => {
               <td className="py-2 px-4">
                 <div className="flex space-x-2">
                   <UpdateButton href={`/accounts/edit/${user.rut_usuario}`} />
-                  <DeleteButton action={`/accounts/delete/${user.rut_usuario}`} />
+                  <DeleteButton action={`/api/users/${user.rut_usuario}`} onSuccess={onUserDeleted} /> {/* Pass the callback here */}
                 </div>
               </td>
             </tr>

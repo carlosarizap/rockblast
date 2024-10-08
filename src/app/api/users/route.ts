@@ -1,7 +1,5 @@
-// /src/app/api/users/route.ts
-
 import { NextResponse } from 'next/server';
-import { createUser, getAllUsers } from '@/app/lib/actions/user-actions';
+import { createUser, getAllUsers, deleteUserByRut } from '@/app/lib/actions/user-actions'; // Add deleteUserByRut
 
 // Handle GET requests to fetch all users
 export async function GET() {
@@ -16,10 +14,8 @@ export async function GET() {
 // Handle POST requests to create a new user
 export async function POST(req: Request) {
   try {
-    // Parse the incoming form data from the request body
     const { rut_usuario, nombres_usuario, apellidos_usuario, correo_usuario, id_rol_usuario, pass_usuario, estado_usuario } = await req.json();
 
-    // Ensure the password is provided and hash it
     if (!pass_usuario) {
       return NextResponse.json({ message: 'Password is required' }, { status: 400 });
     }
@@ -30,8 +26,8 @@ export async function POST(req: Request) {
       apellidos_usuario,
       correo_usuario,
       id_rol_usuario,
-      pass_usuario,  // Unhashed here, hashing will happen in createUser
-      estado_usuario: estado_usuario === 'true',  // Ensure boolean conversion
+      pass_usuario,
+      estado_usuario: estado_usuario === 'true',
     });
 
     return NextResponse.json(newUser, { status: 201 });
