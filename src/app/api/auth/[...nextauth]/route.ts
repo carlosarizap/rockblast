@@ -30,10 +30,10 @@ const handler = NextAuth({
         const client = await pool.connect();
         try {
           const result = await client.query(
-            `SELECT u.*, r.nombre_roles 
-             FROM tb_usuarios u
-             JOIN tb_roles r ON u.id_rol_usuario = r.id_roles
-             WHERE u.rut_usuario = $1`,
+            `SELECT u.*, r.rol_nombre 
+             FROM tb_usuario u
+             JOIN tb_roles r ON u.rol_id = r.rol_id
+             WHERE u.usu_id_rut = $1`,
             [rut]
           );
 
@@ -42,18 +42,18 @@ const handler = NextAuth({
           }
 
           const user = result.rows[0];
-          const isValid = await bcrypt.compare(password, user.pass_usuario);
+          const isValid = await bcrypt.compare(password, user.usu_pass);
 
           if (!isValid) {
             throw new Error("La contraseña es incorrecta");
           }
 
           return {
-            id: user.rut_usuario,
-            name: `${user.nombres_usuario} ${user.apellidos_usuario}`,
-            email: user.correo_usuario,
-            role: user.nombre_roles, // Include role
-            image: user.foto_perfil,
+            id: user.usu_id_rut,
+            name: `${user.usu_nombre} ${user.usu_apellido}`,
+            email: user.usu_correo,
+            role: user.rol_nombre, // Include role
+            image: user.usu_foto_perfil,
           };
         } finally {
           client.release();

@@ -14,20 +14,20 @@ export async function GET() {
 // Handle POST requests to create a new user
 export async function POST(req: Request) {
   try {
-    const { rut_usuario, nombres_usuario, apellidos_usuario, correo_usuario, id_rol_usuario, pass_usuario, estado_usuario } = await req.json();
+    const { usu_id_rut, usu_nombre, usu_apellido, usu_correo, rol_id, usu_pass, usu_estado } = await req.json();
 
-    if (!pass_usuario) {
+    if (!usu_pass) {
       return NextResponse.json({ message: 'Password is required' }, { status: 400 });
     }
 
     const newUser = await createUser({
-      rut_usuario,
-      nombres_usuario,
-      apellidos_usuario,
-      correo_usuario,
-      id_rol_usuario,
-      pass_usuario,
-      estado_usuario: estado_usuario === 'true',
+      usu_id_rut,
+      usu_nombre,
+      usu_apellido,
+      usu_correo,
+      rol_id,
+      usu_pass,
+      usu_estado: usu_estado === 'true',
     });
 
     return NextResponse.json(newUser, { status: 201 });

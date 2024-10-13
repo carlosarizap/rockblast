@@ -14,6 +14,7 @@ export default function Status({
   deactiveLabel = 'Inactivo',
 }: Props) {
   return (
+
     <span
       className={clsx(
         'inline-flex items-center rounded-full px-2 py-1 text-xs font-semibold',
