@@ -13,9 +13,9 @@ export const getAllUsers = async (): Promise<User[]> => {
   const client = await pool.connect();
   try {
     const result = await client.query(`
-      SELECT u.rut_usuario, u.nombres_usuario, u.apellidos_usuario, u.correo_usuario, r.nombre_roles, u.estado_usuario
-      FROM tb_usuarios u
-      JOIN tb_roles r ON u.id_rol_usuario = r.id_roles
+      SELECT u.usu_id_rut, u.usu_nombre, u.usu_apellido, u.usu_correo, r.rol_nombre, u.usu_estado
+      FROM tb_usuario u
+      JOIN tb_roles r ON u.rol_id = r.rol_id
     `);
     return result.rows;
   } finally {
@@ -23,17 +23,17 @@ export const getAllUsers = async (): Promise<User[]> => {
   }
 };
 
-export const createUser = async (userData: User & { pass_usuario: string }): Promise<User> => {
+export const createUser = async (userData: User & { usu_pass: string }): Promise<User> => {
   const client = await pool.connect();
   try {
-    const { rut_usuario, nombres_usuario, apellidos_usuario, correo_usuario, id_rol_usuario, estado_usuario, pass_usuario } = userData;
+    const { usu_id_rut, usu_nombre, usu_apellido, usu_correo, rol_id, usu_estado, usu_pass } = userData;
 
     // Hash the password before inserting
-    const hashedPassword = await bcrypt.hash(pass_usuario, 10);
+    const hashedPassword = await bcrypt.hash(usu_pass, 10);
 
     await client.query(
-      'INSERT INTO tb_usuarios (rut_usuario, nombres_usuario, apellidos_usuario, correo_usuario, id_rol_usuario, estado_usuario, pass_usuario) VALUES ($1, $2, $3, $4, $5, $6, $7)',
-      [rut_usuario, nombres_usuario, apellidos_usuario, correo_usuario, id_rol_usuario, estado_usuario, hashedPassword]
+      'INSERT INTO tb_usuario (usu_id_rut, usu_nombre, usu_apellido, usu_correo, rol_id, usu_estado, usu_pass) VALUES ($1, $2, $3, $4, $5, $6, $7)',
+      [usu_id_rut, usu_nombre, usu_apellido, usu_correo, rol_id, usu_estado, hashedPassword]
     );
 
     return userData;
@@ -42,12 +42,12 @@ export const createUser = async (userData: User & { pass_usuario: string }): Pro
   }
 };
 
-export const deleteUserByRut = async (rut_usuario: string): Promise<boolean> => {
+export const deleteUserByRut = async (usu_id_rut: string): Promise<boolean> => {
   const client = await pool.connect();
   try {
-    const result = await client.query('DELETE FROM tb_usuarios WHERE rut_usuario = $1', [rut_usuario]);
+    const result = await client.query('DELETE FROM tb_usuario WHERE usu_id_rut = $1', [usu_id_rut]);
 
-    console.log("rut_usuario", rut_usuario)
+    console.log("usu_id_rut", usu_id_rut)
 
     // Ensure rowCount is not null and greater than 0
     return (typeof result.rowCount === 'number' && result.rowCount > 0);
@@ -56,12 +56,12 @@ export const deleteUserByRut = async (rut_usuario: string): Promise<boolean> => 
   }
 };
 
-export const updateUserByRut = async (rut_usuario: string, userData: User): Promise<boolean> => {
+export const updateUserByRut = async (usu_id_rut: string, userData: User): Promise<boolean> => {
   const client = await pool.connect();
   try {
     const result = await client.query(
-      'UPDATE tb_usuarios SET nombres_usuario = $1, apellidos_usuario = $2, correo_usuario = $3, id_rol_usuario = $4, estado_usuario = $5 WHERE rut_usuario = $6',
-      [userData.nombres_usuario, userData.apellidos_usuario, userData.correo_usuario, userData.id_rol_usuario, userData.estado_usuario, rut_usuario]
+      'UPDATE tb_usuario SET usu_nombre = $1, usu_apellido = $2, usu_correo = $3, rol_id = $4, usu_estado = $5 WHERE usu_id_rut = $6',
+      [userData.usu_nombre, userData.usu_apellido, userData.usu_correo, userData.rol_id, userData.usu_estado, usu_id_rut]
     );
 
     // Ensure rowCount is not null and greater than 0
@@ -71,12 +71,12 @@ export const updateUserByRut = async (rut_usuario: string, userData: User): Prom
   }
 };
 
-export const getUserByRut = async (rut_usuario: string): Promise<User | null> => {
+export const getUserByRut = async (usu_id_rut: string): Promise<User | null> => {
   const client = await pool.connect();
   try {
     const result = await client.query(
-      'SELECT rut_usuario, nombres_usuario, apellidos_usuario, correo_usuario, id_rol_usuario, estado_usuario FROM tb_usuarios WHERE rut_usuario = $1',
-      [rut_usuario]
+      'SELECT usu_id_rut, usu_nombre, usu_apellido, usu_correo, rol_id, usu_estado FROM tb_usuario WHERE usu_id_rut = $1',
+      [usu_id_rut]
     );
 
     if (result.rows.length === 0) {

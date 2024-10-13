@@ -3,16 +3,18 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Sidenav from '@/app/ui/dashboard/sidenav'; // Import Sidenav for consistent layout
+import { DniInput } from '@/app/ui/components/input/dni-input';
+
 
 const CreateUserPage = () => {
   const [formData, setFormData] = useState({
-    rut_usuario: '',
-    nombres_usuario: '',
-    apellidos_usuario: '',
-    correo_usuario: '',
-    id_rol_usuario: '',
-    pass_usuario: '', // Store the password
-    estado_usuario: 'true', // Default to true (active)
+    usu_id_rut: '',
+    usu_nombre: '',
+    usu_apellido: '',
+    usu_correo: '',
+    rol_id: '',
+    usu_pass: '', // Store the password
+    usu_estado: 'true', // Default to true (active)
   });
   const [roles, setRoles] = useState([]); // Store roles fetched from API
   const router = useRouter();
@@ -71,22 +73,18 @@ const CreateUserPage = () => {
               <form onSubmit={handleSubmit} className="flex-1 flex flex-col justify-between">
                 <div className="flex-grow">
                   <div className="mb-2">
-                    <label className="block mb-1 text-sm">RUT</label>
-                    <input
-                      type="text"
-                      name="rut_usuario"
-                      value={formData.rut_usuario}
-                      onChange={handleChange}
-                      className="w-full border px-2 py-1 text-sm rounded"
-                      required
+                    <DniInput
+                      value={formData.usu_id_rut}
+                      onChange={(e) => setFormData({ ...formData, usu_id_rut: e.target.value })}
                     />
+
                   </div>
                   <div className="mb-2">
                     <label className="block mb-1 text-sm">Nombres</label>
                     <input
                       type="text"
-                      name="nombres_usuario"
-                      value={formData.nombres_usuario}
+                      name="usu_nombre"
+                      value={formData.usu_nombre}
                       onChange={handleChange}
                       className="w-full border px-2 py-1 text-sm rounded"
                       required
@@ -96,8 +94,8 @@ const CreateUserPage = () => {
                     <label className="block mb-1 text-sm">Apellidos</label>
                     <input
                       type="text"
-                      name="apellidos_usuario"
-                      value={formData.apellidos_usuario}
+                      name="usu_apellido"
+                      value={formData.usu_apellido}
                       onChange={handleChange}
                       className="w-full border px-2 py-1 text-sm rounded"
                       required
@@ -107,8 +105,8 @@ const CreateUserPage = () => {
                     <label className="block mb-1 text-sm">Correo</label>
                     <input
                       type="email"
-                      name="correo_usuario"
-                      value={formData.correo_usuario}
+                      name="usu_correo"
+                      value={formData.usu_correo}
                       onChange={handleChange}
                       className="w-full border px-2 py-1 text-sm rounded"
                       required
@@ -118,8 +116,8 @@ const CreateUserPage = () => {
                     <label className="block mb-1 text-sm">Contraseña</label>
                     <input
                       type="password"
-                      name="pass_usuario"
-                      value={formData.pass_usuario}
+                      name="usu_pass"
+                      value={formData.usu_pass}
                       onChange={handleChange}
                       className="w-full border px-2 py-1 text-sm rounded"
                       required
@@ -128,21 +126,21 @@ const CreateUserPage = () => {
                   <div className="mb-2">
                     <label className="block mb-1 text-sm">Rol</label>
                     <select
-                      name="id_rol_usuario"
-                      value={formData.id_rol_usuario}
+                      name="rol_id"
+                      value={formData.rol_id}
                       onChange={handleChange}
                       className="w-full border px-2 py-1 text-sm rounded"
                       required
                     >
                       <option value="">Seleccionar rol</option>
-                      {roles.map((role: { id_roles: number; nombre_roles: string }) => (
-                        <option key={role.id_roles} value={role.id_roles}>
-                          {role.nombre_roles}
+                      {roles.map((role: { rol_id: number; rol_nombre: string }) => (
+                        <option key={role.rol_id} value={role.rol_id}>
+                          {role.rol_nombre}
                         </option>
                       ))}
                     </select>
                   </div>
-                  
+
                 </div>
                 <div className="flex justify-between mt-3">
                   <button

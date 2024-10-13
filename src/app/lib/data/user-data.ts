@@ -13,9 +13,9 @@ export const getAllUsersFromDB = async (): Promise<User[]> => {
   const client = await pool.connect();
   try {
     const query = `
-      SELECT u.rut_usuario, u.nombres_usuario, u.apellidos_usuario, u.correo_usuario, r.nombre_roles, u.estado_usuario
-      FROM tb_usuarios u
-      JOIN tb_roles r ON u.id_rol_usuario = r.id_roles
+      SELECT u.usu_id_rut, u.usu_nombre, u.usu_apellido, u.usu_correo, r.rol_nombre, u.usu_estado
+      FROM tb_usuario u
+      JOIN tb_roles r ON u.rol_id = r.rol_id
     `;
     const result = await client.query(query);
     return result.rows;
@@ -28,7 +28,7 @@ export const getAllUsersFromDB = async (): Promise<User[]> => {
 export const getUserByIdFromDB = async (id: string): Promise<User | null> => {
   const client = await pool.connect();
   try {
-    const result = await client.query('SELECT * FROM tb_usuarios WHERE id = $1', [id]);
+    const result = await client.query('SELECT * FROM tb_usuario WHERE id = $1', [id]);
 
     console.log("resilt", result);
 

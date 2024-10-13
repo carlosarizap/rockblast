@@ -1,12 +1,12 @@
 export interface User {
-    rut_usuario: string;
-    nombres_usuario: string;
-    apellidos_usuario: string;
-    correo_usuario: string;
-    nombre_roles?: string;  // Role name
-    foto_perfil?: string; 
-    estado_usuario?: boolean; 
-    id_rol_usuario?: string; 
-    pass_usuario?: string; 
+    usu_id_rut: string;
+    usu_nombre: string;
+    usu_apellido: string;
+    usu_correo: string;
+    rol_nombre?: string;  // Role name
+    usu_foto_perfil?: string; 
+    usu_estado?: boolean; 
+    rol_id?: string; 
+    usu_pass?: string; 
   }
   

@@ -2,7 +2,7 @@ import { TrashIcon } from '@heroicons/react/24/outline';
 import { useRouter } from 'next/navigation';
 
 interface DeleteButtonProps {
-  action: string; // action will be the API endpoint including the rut_usuario
+  action: string; // action will be the API endpoint including the usu_id_rut
   onSuccess: () => void; // callback to trigger when the deletion is successful
 }
 

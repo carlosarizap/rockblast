@@ -10,7 +10,7 @@ const pool = new Pool({
 export async function GET() {
   try {
     const client = await pool.connect();
-    const result = await client.query('SELECT id_roles, nombre_roles FROM tb_roles');
+    const result = await client.query('SELECT rol_id, rol_nombre FROM tb_roles');
     client.release();
 
     return NextResponse.json(result.rows);

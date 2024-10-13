@@ -8,12 +8,12 @@ const EditUserPage = () => {
   const router = useRouter();
   const { rut } = useParams(); // Get the 'rut' parameter from the dynamic URL
   const [formData, setFormData] = useState({
-    rut_usuario: '',
-    nombres_usuario: '',
-    apellidos_usuario: '',
-    correo_usuario: '',
-    id_rol_usuario: '',
-    estado_usuario: 'true',
+    usu_id_rut: '',
+    usu_nombre: '',
+    usu_apellido: '',
+    usu_correo: '',
+    rol_id: '',
+    usu_estado: 'true',
   });
   const [roles, setRoles] = useState([]); // To store the roles
 
@@ -93,8 +93,8 @@ const EditUserPage = () => {
                     <label className="block mb-1 text-sm">RUT</label>
                     <input
                       type="text"
-                      name="rut_usuario"
-                      value={formData.rut_usuario}
+                      name="usu_id_rut"
+                      value={formData.usu_id_rut}
                       onChange={handleChange}
                       className="w-full border px-2 py-1 text-sm rounded"
                       required
@@ -106,8 +106,8 @@ const EditUserPage = () => {
                     <label className="block mb-1 text-sm">Nombres</label>
                     <input
                       type="text"
-                      name="nombres_usuario"
-                      value={formData.nombres_usuario}
+                      name="usu_nombre"
+                      value={formData.usu_nombre}
                       onChange={handleChange}
                       className="w-full border px-2 py-1 text-sm rounded"
                       required
@@ -118,8 +118,8 @@ const EditUserPage = () => {
                     <label className="block mb-1 text-sm">Apellidos</label>
                     <input
                       type="text"
-                      name="apellidos_usuario"
-                      value={formData.apellidos_usuario}
+                      name="usu_apellido"
+                      value={formData.usu_apellido}
                       onChange={handleChange}
                       className="w-full border px-2 py-1 text-sm rounded"
                       required
@@ -130,8 +130,8 @@ const EditUserPage = () => {
                     <label className="block mb-1 text-sm">Correo</label>
                     <input
                       type="email"
-                      name="correo_usuario"
-                      value={formData.correo_usuario}
+                      name="usu_correo"
+                      value={formData.usu_correo}
                       onChange={handleChange}
                       className="w-full border px-2 py-1 text-sm rounded"
                       required
@@ -141,16 +141,16 @@ const EditUserPage = () => {
                   <div className="mb-2">
                     <label className="block mb-1 text-sm">Rol</label>
                     <select
-                      name="id_rol_usuario"
-                      value={formData.id_rol_usuario}
+                      name="rol_id"
+                      value={formData.rol_id}
                       onChange={handleChange}
                       className="w-full border px-2 py-1 text-sm rounded"
                       required
                     >
                       <option value="">Seleccionar rol</option>
-                      {roles.map((role: { id_roles: number; nombre_roles: string }) => (
-                        <option key={role.id_roles} value={role.id_roles}>
-                          {role.nombre_roles}
+                      {roles.map((role: { rol_id: number; rol_nombre: string }) => (
+                        <option key={role.rol_id} value={role.rol_id}>
+                          {role.rol_nombre}
                         </option>
                       ))}
                     </select>
@@ -160,8 +160,8 @@ const EditUserPage = () => {
                   <div className="mb-2">
                     <label className="block mb-1 text-sm">Estado</label>
                     <select
-                      name="estado_usuario"
-                      value={formData.estado_usuario}
+                      name="usu_estado"
+                      value={formData.usu_estado}
                       onChange={handleChange}
                       className="w-full border px-2 py-1 text-sm rounded"
                       required

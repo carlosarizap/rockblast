@@ -10,6 +10,7 @@ interface NavLinksProps {
 const links = [
   { name: 'Inicio', href: 'dashboard' },
   { name: 'Sensores', href: 'sensors' },
+  { name: 'Carga de Datos', href: 'uploads' },
 ];
 
 const NavLinks: React.FC<NavLinksProps> = ({ role }) => {

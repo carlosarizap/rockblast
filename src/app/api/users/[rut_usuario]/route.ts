@@ -1,11 +1,11 @@
-// /src/app/api/users/[rut_usuario]/route.ts
+// /src/app/api/users/[usu_id_rut]/route.ts
 
 import { NextResponse } from 'next/server';
 import { deleteUserByRut, getUserByRut, updateUserByRut } from '@/app/lib/actions/user-actions';
 
 export async function DELETE(req: Request, { params }: { params: { rut_usuario: string } }) {
   try {
-    const { rut_usuario } = params; // Extract rut_usuario from the request parameters
+    const { rut_usuario } = params; // Extract usu_id_rut from the request parameters
 
     const result = await deleteUserByRut(rut_usuario);
     if (result) {
@@ -38,6 +38,7 @@ export async function PUT(req: Request, { params }: { params: { rut_usuario: str
 // Handle GET requests to fetch a single user by RUT
 export async function GET(req: Request, { params }: { params: { rut_usuario: string } }) {
     try {
+
       const user = await getUserByRut(params.rut_usuario);
   
       if (user) {
