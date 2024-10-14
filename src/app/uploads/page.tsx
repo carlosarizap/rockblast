@@ -2,6 +2,7 @@
 import React, { useState } from 'react';
 import Papa, { ParseResult } from 'papaparse';
 import SideNav from '@/app/ui/dashboard/sidenav';
+import { log } from 'console';
 
 export default function UploadsPage() {
     const [file, setFile] = useState<File | null>(null);
@@ -29,14 +30,14 @@ export default function UploadsPage() {
         
                 // Send the JSON data to the API
                 try {
-                    const response = await fetch('https://your-fastapi-api-endpoint/upload-json', {
+                    const response = await fetch('http://127.0.0.1:8000/datos/cargar', {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',
                         },
                         body: JSON.stringify(jsonData),
                     });
-        
+                    
                     if (response.ok) {
                         setUploadStatus('File uploaded successfully as JSON!');
                     } else {
