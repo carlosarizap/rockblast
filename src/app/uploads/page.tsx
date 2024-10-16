@@ -1,12 +1,30 @@
-"use client"
-import React, { useState } from 'react';
+'use client';
+
+import React, { useState, useEffect } from 'react';
 import Papa, { ParseResult } from 'papaparse';
 import SideNav from '@/app/ui/dashboard/sidenav';
-import { log } from 'console';
+import { useSession, signIn } from 'next-auth/react';
 
 export default function UploadsPage() {
     const [file, setFile] = useState<File | null>(null);
     const [uploadStatus, setUploadStatus] = useState('');
+    const { data: session, status } = useSession();
+
+    useEffect(() => {
+        if (status === 'unauthenticated') {
+            // Redirect to sign in if not authenticated
+            signIn();
+        }
+    }, [status]);
+
+    // Check if the user is authenticated and has the Admin role
+    if (status === 'loading') {
+        return <div>Loading...</div>;
+    }
+
+    if (session?.user?.role !== 'Admin') {
+        return <div>Acceso Denegado.</div>;
+    }
 
     const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
         if (event.target.files) {
