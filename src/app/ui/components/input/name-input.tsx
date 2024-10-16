@@ -1,21 +1,20 @@
 import { useState, useEffect } from 'react';
-import { IdentificationIcon } from '@heroicons/react/24/outline';
+import { UserIcon } from '@heroicons/react/24/outline';
 
 interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
-  state?: { errors?: { dni?: string[] } }; // State contains the errors if any
+  state?: { errors?: { name?: string[] } }; // State for handling errors if any
   label?: string;
   id?: string;
   name?: string;
-  value: string; // Add value prop
-  onChange: (e: React.ChangeEvent<HTMLInputElement>) => void; // Add onChange prop
+  value: string; // Value prop to sync with parent state
+  onChange: (e: React.ChangeEvent<HTMLInputElement>) => void; // onChange handler from parent
 }
 
-export const DniInput = ({
+export const NameInput = ({
   state,
-  label = 'RUT:',
-  id = 'usu_id_rut',
-  name = 'usu_id_rut',
-  maxLength = 10,
+  label = 'Nombre:',
+  id = 'usu_nombre',
+  name = 'usu_nombre',
   value,
   onChange,
   ...rest
@@ -28,27 +27,16 @@ export const DniInput = ({
   }, [value]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    let newValue = e.target.value.replace(/[^0-9kK]/g, '');
+    let newValue = e.target.value;
 
-    if (newValue.includes('K') && newValue.indexOf('K') !== newValue.length - 1) {
-      newValue = newValue.replace(/K/g, '');
-    }
-
-    if (newValue.length > 9) {
-      newValue = newValue.slice(0, 9);
-    }
-
-    if (newValue.length > 1) {
-      newValue = `${newValue.slice(0, -1)}-${newValue.slice(-1)}`;
-    }
-
-    newValue = newValue.toUpperCase();
+    // Allow only alphabetic characters and spaces
+    newValue = newValue.replace(/[^a-zA-Z\s]/g, '');
 
     setFormattedValue(newValue);
 
-    // Crear un evento modificado con el nuevo valor y llamarlo
+    // Modificar el valor en el evento y llamar a onChange
     if (onChange) {
-      e.target.value = newValue; // Modificar el valor en el evento
+      e.target.value = newValue; // Modificar el valor del evento
       onChange(e); // Pasar el evento modificado al padre
     }
   };
@@ -60,7 +48,7 @@ export const DniInput = ({
       </label>
       <div className="relative">
         <span className="absolute inset-y-0 left-0 flex items-center pl-2">
-          <IdentificationIcon className="h-5 w-5 text-gray-500" />
+          <UserIcon className="h-5 w-5 text-gray-500" />
         </span>
         <input
           type="text"
@@ -68,18 +56,15 @@ export const DniInput = ({
           name={name}
           value={formattedValue}
           onChange={handleInputChange}
-          maxLength={maxLength}
           className="w-full border px-2 py-1 pl-8 text-sm rounded"
           {...rest}
         />
       </div>
-      {state?.errors?.dni && (
+      {state?.errors?.name && (
         <p className="text-red-500 text-xs mt-1">
-          {state.errors.dni.join(', ')}
+          {state.errors.name.join(', ')}
         </p>
       )}
     </div>
   );
 };
-
-
