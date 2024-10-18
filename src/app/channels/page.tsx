@@ -1,39 +1,57 @@
 'use client';
 
 import { useSession } from 'next-auth/react';
-import { useRouter } from 'next/navigation'; // Import the correct useRouter
-import SideNav from '@/app/ui/dashboard/sidenav';
-import { useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { useEffect, useState } from 'react';
+import Sidenav from '../ui/dashboard/sidenav';
+import Table from '../ui/channels/table';
+import { User } from '@/app/lib/definitions/user';
+import { CreateButton } from '../ui/components/buttons/create-button';
 
 export default function Layout() {
-    const { data: session, status } = useSession(); // Get session data
-    const router = useRouter(); // Get router for redirection
-
+    const { data: session, status } = useSession();
+    const router = useRouter();
+    const [users, setUsers] = useState<User[]>([]);
+  
+    const fetchUsers = async () => {
+      const response = await fetch('/api/users');
+      const data = await response.json();
+      setUsers(data);
+    };
+  
     useEffect(() => {
-        if (status === 'unauthenticated') {
-            router.push('/auth/signin'); // Redirect to login if not authenticated
-        }
-    }, [status, router]);
-
+      if (status === 'authenticated' && session?.user?.role !== 'Admin') {
+        router.push('/dashboard');
+      }
+  
+      fetchUsers();
+    }, [session, status, router]);
+  
     if (status === 'loading') {
-        return <div>Loading...</div>; // Show loading while checking session
+      return <p>Loading...</p>;
     }
-
-    if (status === 'unauthenticated') {
-        return null; // Return null until redirect happens
-    }
+  
 
     return (
-        <div className='flex h-screen'>
-            {/* Sidenav on the left */}
-            <div className='w-72 flex-none z-10 bg-white'>
-                <SideNav />
+        <div className="flex h-screen">
+          {/* Sidenav on the left */}
+          <div className="w-72 flex-none z-10 bg-white">
+            <Sidenav />
+          </div>
+    
+          {/* Main content */}
+          <div className="flex-1 flex flex-col h-screen overflow-auto p-4">
+            <div className="h-full bg-gradient-to-br from-custom-blue to-custom-blue-light p-6 rounded-2xl flex flex-col">
+              {/* Flex container for the title and button */}
+              <div className="flex justify-between items-center mb-6">
+                <h1 className="text-white text-2xl font-bold">Gestión de Canales</h1>
+                <CreateButton href="/nodes/create" label="Crear Canal" /> {/* Custom button */}
+              </div>
+              <div className="bg-white p-1 rounded-xl flex-1 overflow-auto">
+                <Table users={users} onUserDeleted={fetchUsers} /> {/* Pass the fetchUsers function to Table */}
+              </div>
             </div>
-
-            {/* Main content */}
-            <div className='bg-white rounded-2xl flex-1 overflow-auto z-0 p-4'>
-                <h5>sensores</h5>
-            </div>
+          </div>
         </div>
-    );
+      );
 }
