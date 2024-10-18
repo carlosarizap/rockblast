@@ -23,7 +23,7 @@ export default function Layout() {
     labels: ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul'],
     datasets: [
       {
-        label: 'Piezómetro D2300 - nivel BAJO - Canal B',
+        label: 'Piezómetro D2300 - nivel ALTO - Canal B',
         data: [70, 70, 70, 70, 70, 70, 70],
         borderColor: 'red',
         borderWidth: 5,
@@ -100,7 +100,7 @@ export default function Layout() {
               {/* Graph div */}
               <div className="rounded-2xl flex-[1] bg-white p-4 shadow-md">
                 <h3 className="text-lg font-semibold mb-4 text-custom-blue">
-                  Piezómetro D2300 - Nivel BAJO - Canal B
+                  Piezómetro D2300 - Nivel ALTO - Canal B
                 </h3>
                 <div style={{ height: '200px', width: '100%' }}>
                   <Line data={data} options={options} />
