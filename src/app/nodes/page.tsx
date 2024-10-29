@@ -5,18 +5,18 @@ import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import Sidenav from '../ui/dashboard/sidenav';
 import Table from '../ui/nodes/table';
-import { User } from '@/app/lib/definitions/user';
+import { Node } from '@/app/lib/definitions/node';
 import { CreateButton } from '../ui/components/buttons/create-button'; // Import your custom CreateButton
 
 const NodesPage = () => {
   const { data: session, status } = useSession();
   const router = useRouter();
-  const [users, setUsers] = useState<User[]>([]);
+  const [nodes, setNodes] = useState<Node[]>([]);
 
-  const fetchUsers = async () => {
-    const response = await fetch('/api/users');
+  const fetchNodes = async () => {
+    const response = await fetch('/api/nodes');
     const data = await response.json();
-    setUsers(data);
+    setNodes(data);
   };
 
   useEffect(() => {
@@ -24,7 +24,7 @@ const NodesPage = () => {
       router.push('/dashboard');
     }
 
-    fetchUsers();
+    fetchNodes();
   }, [session, status, router]);
 
   if (status === 'loading') {
@@ -47,7 +47,7 @@ const NodesPage = () => {
             <CreateButton href="/nodes/create" label="Crear Pozo" /> {/* Custom button */}
           </div>
           <div className="bg-white p-1 rounded-xl flex-1 overflow-auto">
-            <Table users={users} onUserDeleted={fetchUsers} /> {/* Pass the fetchUsers function to Table */}
+            <Table nodes={nodes} onNodeDeleted={fetchNodes} /> {/* Pass the fetchNodes function to Table */}
           </div>
         </div>
       </div>
