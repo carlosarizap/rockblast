@@ -1,5 +1,4 @@
 import { Node } from '@/app/lib/definitions/node';
-import Status from '@/app/ui/components/status'; // Import the Status component
 import { DeleteButton } from '@/app/ui/components/buttons/delete-button'; // Import DeleteButton
 import { UpdateButton } from '@/app/ui/components/buttons/update-button'; // Import UpdateButton
 import NodeStatus from '../components/node-status';
