@@ -43,9 +43,7 @@ export default function UploadsPage() {
             header: true,  
             skipEmptyLines: true,  
             complete: async (results: ParseResult<any>) => {
-                const jsonData = results.data;
-                console.log(jsonData);
-        
+                const jsonData = results.data;        
                 // Send the JSON data to the API
                 try {
                     const response = await fetch('http://127.0.0.1:8000/datos/cargar', {
