@@ -30,6 +30,9 @@
     "react-chartjs-2": "^5.2.0",
     "react-dom": "^18",
     "uuid": "^11.0.2"
+
+    "react-dom": "^18"
+
   },
   "devDependencies": {
     "@types/bcryptjs": "^2.4.6",

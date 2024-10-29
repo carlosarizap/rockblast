@@ -5,18 +5,22 @@ import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import Sidenav from '../ui/dashboard/sidenav';
 import Table from '../ui/nodes/table';
+
 import { Node } from '@/app/lib/definitions/node';
+
 import { CreateButton } from '../ui/components/buttons/create-button'; // Import your custom CreateButton
 
 const NodesPage = () => {
   const { data: session, status } = useSession();
   const router = useRouter();
+
   const [nodes, setNodes] = useState<Node[]>([]);
 
   const fetchNodes = async () => {
     const response = await fetch('/api/nodes');
     const data = await response.json();
     setNodes(data);
+
   };
 
   useEffect(() => {
@@ -25,6 +29,7 @@ const NodesPage = () => {
     }
 
     fetchNodes();
+
   }, [session, status, router]);
 
   if (status === 'loading') {
@@ -47,7 +52,9 @@ const NodesPage = () => {
             <CreateButton href="/nodes/create" label="Crear Pozo" /> {/* Custom button */}
           </div>
           <div className="bg-white p-1 rounded-xl flex-1 overflow-auto">
+
             <Table nodes={nodes} onNodeDeleted={fetchNodes} /> {/* Pass the fetchNodes function to Table */}
+
           </div>
         </div>
       </div>

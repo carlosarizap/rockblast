@@ -1,3 +1,4 @@
+
 import { Node } from '@/app/lib/definitions/node';
 import Status from '@/app/ui/components/status'; // Import the Status component
 import { DeleteButton } from '@/app/ui/components/buttons/delete-button'; // Import DeleteButton
@@ -22,6 +23,7 @@ function mapToNodeStatus(status: string): 'Deshabilitado' | 'Operativo' | 'Probl
 
 
 const Table: React.FC<NodesTableProps> = ({ nodes, onNodeDeleted }) => {
+
   return (
     <div className="overflow-x-auto rounded-lg border border-gray-200 w-full h-full">
       <table className="min-w-full bg-white border-collapse overflow-hidden">
@@ -29,13 +31,16 @@ const Table: React.FC<NodesTableProps> = ({ nodes, onNodeDeleted }) => {
           <tr>
             <th className="py-2 px-4 bg-custom-blue text-white font-semibold text-xs uppercase text-left rounded-tl-lg">ID</th>
             <th className="py-2 px-4 bg-custom-blue text-white font-semibold text-xs uppercase text-left">Cota</th>
+
             <th className="py-2 px-4 bg-custom-blue text-white font-semibold text-xs uppercase text-left">Coordenada X</th>
             <th className="py-2 px-4 bg-custom-blue text-white font-semibold text-xs uppercase text-left">Coordenada Y</th>
+
             <th className="py-2 px-4 bg-custom-blue text-white font-semibold text-xs uppercase text-left">Estado</th>
             <th className="py-2 px-4 bg-custom-blue text-white font-semibold text-xs uppercase text-left rounded-tr-lg">Acciones</th>
           </tr>
         </thead>
         <tbody className="text-gray-700">
+
           {nodes.map((node, index) => (
             <tr
               key={node.nod_id}
@@ -53,6 +58,7 @@ const Table: React.FC<NodesTableProps> = ({ nodes, onNodeDeleted }) => {
                 <div className="flex space-x-2">
                   <UpdateButton href={`/nodes/edit/${node.nod_id}`} />
                   <DeleteButton action={`/api/nodes/${node.nod_id}`} onSuccess={onNodeDeleted} /> {/* Pass the callback here */}
+
                 </div>
               </td>
             </tr>

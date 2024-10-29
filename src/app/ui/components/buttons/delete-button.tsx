@@ -14,6 +14,7 @@ export const DeleteButton: React.FC<DeleteButtonProps> = ({ action, onSuccess })
 
     const confirmDelete = window.confirm('Estás seguro que quieres eliminar?');
 
+
     if (confirmDelete) {
       try {
         const response = await fetch(action, {
@@ -21,6 +22,7 @@ export const DeleteButton: React.FC<DeleteButtonProps> = ({ action, onSuccess })
         });
 
         if (response.ok) {
+
           alert('Eliminado');
           onSuccess(); // Trigger the callback to refresh the users
         } else {
@@ -29,6 +31,7 @@ export const DeleteButton: React.FC<DeleteButtonProps> = ({ action, onSuccess })
       } catch (error) {
         console.error('Error deleting:', error);
         alert('Error deleting');
+
       }
     }
   };
