@@ -1,5 +1,6 @@
 import { Pool } from 'pg';
 import { Node } from '@/app/lib/definitions/node';
+import { v4 as uuidv4 } from 'uuid';  // Importa uuid para generar nod_id
 
 const pool = new Pool({
     connectionString: process.env.DATABASE_URL,
@@ -43,19 +44,22 @@ export const getNodeById = async (nod_id: string): Promise<Node | null> => {
 };
 
 // Crear un nuevo nodo
-export const createNode = async (nodeData: Node): Promise<Node> => {
+export const createNode = async (nodeData: Omit<Node, 'nod_id'>): Promise<Node> => {
     const client = await pool.connect();
     try {
-        const { nod_id, nod_nombre, esn_id, nod_coord_este, nod_coord_norte, nod_cota } = nodeData;
-        await client.query(
-            'INSERT INTO tb_nodo (nod_id, nod_nombre, esn_id, nod_coord_este, nod_coord_norte, nod_cota) VALUES ($1, $2, $3, $4, $5, $6)',
-            [nod_id, nod_nombre, esn_id, nod_coord_este, nod_coord_norte, nod_cota]
-        );
-        return nodeData;
+      const nod_id = uuidv4();  // Genera un nuevo UUID para nod_id
+      const { nod_nombre, esn_id, nod_coord_este, nod_coord_norte, nod_cota } = nodeData;
+  
+      await client.query(
+        'INSERT INTO tb_nodo (nod_id, nod_nombre, esn_id, nod_coord_este, nod_coord_norte, nod_cota) VALUES ($1, $2, $3, $4, $5, $6)',
+        [nod_id, nod_nombre, esn_id, nod_coord_este, nod_coord_norte, nod_cota]
+      );
+  
+      return { nod_id, ...nodeData };  // Retorna el nodo con el ID generado
     } finally {
-        client.release();
+      client.release();
     }
-};
+  };
 
 // Actualizar un nodo por ID
 export const updateNodeById = async (nod_id: string, nodeData: Node): Promise<boolean> => {

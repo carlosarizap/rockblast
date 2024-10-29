@@ -51,7 +51,7 @@ const Table: React.FC<NodesTableProps> = ({ nodes, onNodeDeleted }) => {
               </td>
               <td className="py-2 px-4">
                 <div className="flex space-x-2">
-                  <UpdateButton href={`/accounts/edit/${node.nod_id}`} />
+                  <UpdateButton href={`/nodes/edit/${node.nod_id}`} />
                   <DeleteButton action={`/api/nodes/${node.nod_id}`} onSuccess={onNodeDeleted} /> {/* Pass the callback here */}
                 </div>
               </td>
