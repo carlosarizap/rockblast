@@ -5,18 +5,18 @@ import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import Sidenav from '../ui/dashboard/sidenav';
 import Table from '../ui/channels/table';
-import { User } from '@/app/lib/definitions/user';
+import { Channel } from '@/app/lib/definitions/channel';
 import { CreateButton } from '../ui/components/buttons/create-button';
 
 export default function Layout() {
     const { data: session, status } = useSession();
     const router = useRouter();
-    const [users, setUsers] = useState<User[]>([]);
+    const [channels, setChannels] = useState<Channel[]>([]);
   
-    const fetchUsers = async () => {
-      const response = await fetch('/api/users');
+    const fetchChannels = async () => {
+      const response = await fetch('/api/channels');
       const data = await response.json();
-      setUsers(data);
+      setChannels(data);
     };
   
     useEffect(() => {
@@ -24,7 +24,7 @@ export default function Layout() {
         router.push('/dashboard');
       }
   
-      fetchUsers();
+      fetchChannels();
     }, [session, status, router]);
   
     if (status === 'loading') {
@@ -48,7 +48,7 @@ export default function Layout() {
                 <CreateButton href="/nodes/create" label="Crear Canal" /> {/* Custom button */}
               </div>
               <div className="bg-white p-1 rounded-xl flex-1 overflow-auto">
-                <Table users={users} onUserDeleted={fetchUsers} /> {/* Pass the fetchUsers function to Table */}
+                <Table channels={channels} onChannelDeleted={fetchChannels} /> {/* Pass the fetchChannels function to Table */}
               </div>
             </div>
           </div>
