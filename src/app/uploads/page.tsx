@@ -1,23 +1,13 @@
-<<<<<<< HEAD
-"use client"
-import React, { useState } from 'react';
-import Papa, { ParseResult } from 'papaparse';
-import SideNav from '@/app/ui/dashboard/sidenav';
-import { log } from 'console';
-=======
 'use client';
 
 import React, { useState, useEffect } from 'react';
 import Papa, { ParseResult } from 'papaparse';
 import SideNav from '@/app/ui/dashboard/sidenav';
 import { useSession, signIn } from 'next-auth/react';
->>>>>>> ab8a859c561150266ef579243a71d6784f584035
 
 export default function UploadsPage() {
     const [file, setFile] = useState<File | null>(null);
     const [uploadStatus, setUploadStatus] = useState('');
-<<<<<<< HEAD
-=======
     const { data: session, status } = useSession();
 
     useEffect(() => {
@@ -35,7 +25,6 @@ export default function UploadsPage() {
     if (session?.user?.role !== 'Admin') {
         return <div>Acceso Denegado.</div>;
     }
->>>>>>> ab8a859c561150266ef579243a71d6784f584035
 
     const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
         if (event.target.files) {

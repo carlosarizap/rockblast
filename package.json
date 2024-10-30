@@ -13,17 +13,11 @@
     "@heroicons/react": "^2.1.5",
     "@maptiler/sdk": "^2.2.2",
     "@react-google-maps/api": "^2.19.3",
-<<<<<<< HEAD
-    "@types/google.maps": "^3.55.12",
-    "bcryptjs": "^2.4.3",
-    "cesium": "^1.120.0",
-=======
     "@sendgrid/mail": "^8.1.4",
     "@types/google.maps": "^3.55.12",
     "bcryptjs": "^2.4.3",
     "cesium": "^1.120.0",
     "chart.js": "^4.4.5",
->>>>>>> ab8a859c561150266ef579243a71d6784f584035
     "clsx": "^2.1.1",
     "formidable": "^2.0.1",
     "mapbox-gl": "^3.6.0",
