@@ -1,8 +1,22 @@
+<<<<<<< HEAD
 'use client';
+=======
+"use client";
+>>>>>>> ab8a859c561150266ef579243a71d6784f584035
 
 import { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation'; // Use useParams to get the 'rut' from the URL
 import Sidenav from '@/app/ui/dashboard/sidenav';
+<<<<<<< HEAD
+=======
+import { DniInput } from '@/app/ui/components/input/dni-input';
+import { NameInput } from '@/app/ui/components/input/name-input';
+import { LastNameInput } from '@/app/ui/components/input/last-name-input';
+import { EmailInput } from '@/app/ui/components/input/email-input';
+import { RoleSelect } from '@/app/ui/components/input/role-input';
+import { CheckCircleIcon } from '@heroicons/react/24/outline'; // Importa el ícono de Heroicons
+
+>>>>>>> ab8a859c561150266ef579243a71d6784f584035
 
 const EditUserPage = () => {
   const router = useRouter();
@@ -16,6 +30,10 @@ const EditUserPage = () => {
     usu_estado: 'true',
   });
   const [roles, setRoles] = useState([]); // To store the roles
+<<<<<<< HEAD
+=======
+  const [state, setState] = useState({ errors: { dni: [], name: [], lastName: [], email: [], role: [] } }); // Define state for errors
+>>>>>>> ab8a859c561150266ef579243a71d6784f584035
 
   // Fetch user data based on the 'rut' parameter
   useEffect(() => {
@@ -46,10 +64,21 @@ const EditUserPage = () => {
   }, []);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+<<<<<<< HEAD
     setFormData({
       ...formData,
       [e.target.name]: e.target.value,
     });
+=======
+    const { name, value } = e.target;
+
+    if (name && name !== 'undefined') {
+      setFormData((prevFormData) => ({
+        ...prevFormData,
+        [name]: value,
+      }));
+    }
+>>>>>>> ab8a859c561150266ef579243a71d6784f584035
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -83,6 +112,7 @@ const EditUserPage = () => {
       <div className="flex-1 flex flex-col h-screen overflow-auto p-6">
         <div className="flex flex-col justify-center h-full w-full bg-gradient-to-br from-custom-blue to-custom-blue-light p-6 rounded-2xl">
           <div className="flex-1 flex items-center justify-center">
+<<<<<<< HEAD
             <div className="bg-white p-6 rounded-xl shadow-md w-full max-w-lg h-full flex flex-col justify-between">
               <h1 className="text-custom-blue text-2xl font-bold text-center mb-4">Editar Usuario</h1>
 
@@ -174,6 +204,67 @@ const EditUserPage = () => {
 
                 {/* Buttons placed at the bottom */}
                 <div className="flex justify-between mt-4">
+=======
+            <div className="bg-white p-6 rounded-xl shadow-md w-full max-w-lg h-full flex flex-col justify-center">
+              <h1 className="text-custom-blue text-2xl font-bold text-center mb-4">Editar Usuario</h1>
+
+              {/* Form content */}
+              <form onSubmit={handleSubmit} className="flex-1 flex flex-col justify-between">
+                <div className="flex-grow">
+                  <DniInput
+                    name="usu_id_rut"
+                    id="usu_id_rut"
+                    value={formData.usu_id_rut}
+                    onChange={handleChange}
+                    state={state}
+                    readOnly
+                  />
+                  <NameInput
+                    name="usu_nombre"
+                    id="usu_nombre"
+                    value={formData.usu_nombre}
+                    onChange={handleChange}
+                    state={state}
+                  />
+                  <LastNameInput
+                    name="usu_apellido"
+                    id="usu_apellido"
+                    value={formData.usu_apellido}
+                    onChange={handleChange}
+                    state={state}
+                  />
+                  <EmailInput
+                    name="usu_correo"
+                    id="usu_correo"
+                    value={formData.usu_correo}
+                    onChange={handleChange}
+                    state={state}
+                  />
+                  <RoleSelect roles={roles} value={formData.rol_id} onChange={handleChange} state={state} />
+
+                  {/* Estado Select */}
+                  <div className="mb-2">
+                    <label className="block mb-1 text-sm">Estado</label>
+                    <div className="relative">
+                      <span className="absolute inset-y-0 left-0 flex items-center pl-2">
+                        <CheckCircleIcon className="h-5 w-5 text-gray-500" />
+                      </span>
+                      <select
+                        name="usu_estado"
+                        value={formData.usu_estado}
+                        onChange={handleChange}
+                        className="w-full border px-2 py-1 pl-8 text-sm rounded" // Ajustar el padding izquierdo (pl-8) para dejar espacio al ícono
+                        required
+                      >
+                        <option value="true">Activo</option>
+                        <option value="false">Desactivo</option>
+                      </select>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex justify-between mt-3">
+>>>>>>> ab8a859c561150266ef579243a71d6784f584035
                   <button
                     type="button"
                     onClick={() => router.push('/accounts')}
@@ -194,7 +285,10 @@ const EditUserPage = () => {
         </div>
       </div>
     </div>
+<<<<<<< HEAD
 
+=======
+>>>>>>> ab8a859c561150266ef579243a71d6784f584035
   );
 };
 

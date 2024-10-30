@@ -12,7 +12,11 @@ export const DeleteButton: React.FC<DeleteButtonProps> = ({ action, onSuccess })
   const handleDelete = async (e: React.FormEvent) => {
     e.preventDefault(); // Prevent form submission
 
+<<<<<<< HEAD
     const confirmDelete = window.confirm('Are you sure you want to delete this user?');
+=======
+    const confirmDelete = window.confirm('Estás seguro que quieres eliminar?');
+>>>>>>> ab8a859c561150266ef579243a71d6784f584035
 
     if (confirmDelete) {
       try {
@@ -21,6 +25,7 @@ export const DeleteButton: React.FC<DeleteButtonProps> = ({ action, onSuccess })
         });
 
         if (response.ok) {
+<<<<<<< HEAD
           alert('User deleted successfully');
           onSuccess(); // Trigger the callback to refresh the users
         } else {
@@ -29,6 +34,16 @@ export const DeleteButton: React.FC<DeleteButtonProps> = ({ action, onSuccess })
       } catch (error) {
         console.error('Error deleting user:', error);
         alert('Error deleting user');
+=======
+          alert('Eliminado');
+          onSuccess(); // Trigger the callback to refresh the users
+        } else {
+          alert('Error deleting');
+        }
+      } catch (error) {
+        console.error('Error deleting:', error);
+        alert('Error deleting');
+>>>>>>> ab8a859c561150266ef579243a71d6784f584035
       }
     }
   };
