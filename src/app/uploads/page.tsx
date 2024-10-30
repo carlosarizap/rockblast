@@ -40,10 +40,10 @@ export default function UploadsPage() {
 
         // Read the CSV file and convert it to JSON
         Papa.parse(file, {
-            header: true,  
-            skipEmptyLines: true,  
+            header: true,
+            skipEmptyLines: true,
             complete: async (results: ParseResult<any>) => {
-                const jsonData = results.data;        
+                const jsonData = results.data;
                 // Send the JSON data to the API
                 try {
                     const response = await fetch('http://127.0.0.1:8000/datos/cargar', {
@@ -53,7 +53,7 @@ export default function UploadsPage() {
                         },
                         body: JSON.stringify(jsonData),
                     });
-                    
+
                     if (response.ok) {
                         setUploadStatus('File uploaded successfully as JSON!');
                     } else {
@@ -77,7 +77,7 @@ export default function UploadsPage() {
             <div className='bg-white rounded-2xl flex-1 overflow-auto z-0 p-4'>
                 <div className="h-full bg-gradient-to-br from-custom-blue to-custom-blue-light p-4 flex justify-center items-center rounded-2xl">
                     {/* White Box inside the blue gradient */}
-                    <div className="bg-white p-8 rounded-lg w-full max-w-md flex flex-col items-center gap-6">
+                    <div className="bg-white p-8 rounded-lg w-full max-w-md flex flex-col items-center gap-6 shadow-md" >
                         {/* Heading */}
                         <h2 className="text-lg font-semibold text-gray-700">Selecciona un archivo CSV</h2>
 

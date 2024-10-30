@@ -103,7 +103,7 @@ export default function Layout() {
           <div className="flex gap-4 flex-grow">
             <div className="gap-4 flex-grow flex flex-col">
               {/* Map div with slightly more height */}
-              <div className="rounded-2xl flex-[1.5] w-full">
+              <div className="rounded-2xl flex-[1.5] w-full shadow-md">
                 <Map />
               </div>
               {/* Graph div */}
