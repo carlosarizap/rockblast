@@ -51,9 +51,6 @@ const CreateUserPage = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
-    console.log(formData)
-
     try {
       const response = await fetch('/api/users', {
         method: 'POST',

@@ -1,5 +1,4 @@
-"use client";
-
+'use client'
 import { signIn } from 'next-auth/react';
 import { useState } from 'react';
 import Image from 'next/image';
@@ -50,17 +49,29 @@ export default function SignIn() {
     });
 
     if (res.ok) {
-      alert('Correo de recuperación enviado');
-      setShowResetModal(false); // Close the modal after sending the email
+      alert('Si la cuenta exite, te llegará un correo de recuperación');
+      setShowResetModal(false);
     } else {
       alert('Hubo un error, intenta nuevamente');
     }
   };
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-custom-blue to-custom-blue-light">
-      <div className="bg-white rounded-lg shadow-lg p-8 w-full max-w-md">
-        {/* Dashboard Logo */}
+    <div
+      className="flex items-center justify-center min-h-screen relative"
+      style={{
+        backgroundImage: 'url(/mina.jpg)',
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+         // Aplica opacidad a la imagen de fondo
+      }}
+    >
+      {/* Capa de fondo azul degradado superpuesta */}
+      <div className="absolute inset-0 bg-gradient-to-br from-custom-blue to-custom-blue-light opacity-40"></div>
+
+      {/* Contenido principal con formulario de inicio de sesión */}
+      <div className="relative bg-white rounded-lg shadow-lg p-8 w-full max-w-md z-10">
+        {/* Logo del Dashboard */}
         <div className="flex justify-center mb-6">
           <Image
             src="/dashboard.png"
@@ -113,7 +124,7 @@ export default function SignIn() {
         </div>
 
         {showResetModal && (
-          <div className="fixed inset-0 bg-gray-500 bg-opacity-75 flex items-center justify-center">
+          <div className="fixed inset-0 bg-gray-500  flex items-center justify-center">
             <div className="bg-white p-6 rounded-lg shadow-lg">
               <h3 className="text-lg font-bold mb-4">Recuperar Contraseña</h3>
               <form onSubmit={handleResetPassword}>

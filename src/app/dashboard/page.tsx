@@ -30,29 +30,38 @@ export default function Layout() {
         fill: false,
         pointBackgroundColor: 'red',
         pointRadius: 0,
-        tension: 0.3, // Smooth line
+        tension: 0.3,
       },
       {
-        label: 'Canal B',
-        data: [30, 35, 33, 40, 50, 60, 100],
-        borderColor: '#00D6E3', // Custom blue color
+        label: 'Canal B hasta Mayo',
+        data: [30, 35, 33, 40, 50, null, null],
+        borderColor: '#00D6E3', // Azul personalizado
         borderWidth: 5,
         fill: false,
         pointBackgroundColor: '#00D6E3',
         pointRadius: 0,
-        tension: 0.3, // Smooth line
+        tension: 0.3,
+      },
+      {
+        label: 'Canal B desde Junio',
+        data: [null, null, null, null, 50, 60, 100],
+        borderColor: '#FFD700', // Amarillo
+        borderWidth: 5,
+        fill: false,
+        pointBackgroundColor: '#FFD700',
+        pointRadius: 0,
+        tension: 0.3,
       },
     ],
   };
 
-  // Chart options
   const options: any = {
     responsive: true,
     maintainAspectRatio: false,
     plugins: {
       legend: {
-        display: false, // Disable legend in chart area
-        position: 'top' as const, // Explicitly specify a valid value for type compatibility
+        display: false,
+        position: 'top' as const,
       },
       tooltip: {
         enabled: true,
@@ -60,7 +69,7 @@ export default function Layout() {
     },
     scales: {
       x: {
-        type: 'category', // Use the category scale for x-axis
+        type: 'category',
         grid: {
           display: false,
         },
@@ -94,7 +103,7 @@ export default function Layout() {
           <div className="flex gap-4 flex-grow">
             <div className="gap-4 flex-grow flex flex-col">
               {/* Map div with slightly more height */}
-              <div className="rounded-2xl flex-[1.5] w-full">
+              <div className="rounded-2xl flex-[1.5] w-full shadow-md">
                 <Map />
               </div>
               {/* Graph div */}
