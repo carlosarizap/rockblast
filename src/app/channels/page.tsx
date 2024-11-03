@@ -45,7 +45,7 @@ export default function Layout() {
               {/* Flex container for the title and button */}
               <div className="flex justify-between items-center mb-6">
                 <h1 className="text-white text-2xl font-bold">Gestión de Canales</h1>
-                <CreateButton href="/nodes/create" label="Crear Canal" /> {/* Custom button */}
+                <CreateButton href="/channels/create" label="Crear Canal" /> {/* Custom button */}
               </div>
               <div className="bg-white p-1 rounded-xl flex-1 overflow-auto shadow-md">
                 <Table channels={channels} onChannelDeleted={fetchChannels} /> {/* Pass the fetchChannels function to Table */}

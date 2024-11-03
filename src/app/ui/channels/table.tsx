@@ -30,7 +30,7 @@ const formatNumber = (value: any) => {
 
 const ChannelTable: React.FC<ChannelTableProps> = ({ channels, onChannelDeleted }) => {
   return (
-    <div className="overflow-x-auto rounded-lg border border-gray-200 w-full h-full overflow-hidden">
+    <div className="overflow-x-auto rounded-lg border border-gray-200 w-full h-full">
       <table className="min-w-full bg-white border-collapse overflow-hidden">
         <thead>
           <tr>

@@ -49,7 +49,7 @@ export default function SignIn() {
     });
 
     if (res.ok) {
-      alert('Correo de recuperación enviado');
+      alert('Si la cuenta exite, te llegará un correo de recuperación');
       setShowResetModal(false);
     } else {
       alert('Hubo un error, intenta nuevamente');

@@ -1,6 +1,7 @@
 import { Pool } from 'pg';
 import { Channel } from '@/app/lib/definitions/channel';
 import { Parameter } from '@/app/lib/definitions/parameter';
+import { v4 as uuidv4 } from 'uuid';
 
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
@@ -9,9 +10,9 @@ const pool = new Pool({
 
 // Obtener todos los canales con el nombre del nodo y el nombre del estado de canal
 export const getAllChannels = async (): Promise<Channel[]> => {
-    const client = await pool.connect();
-    try {
-      const result = await client.query(`
+  const client = await pool.connect();
+  try {
+    const result = await client.query(`
         SELECT 
           c.can_id, 
           c.can_nombre, 
@@ -33,19 +34,19 @@ export const getAllChannels = async (): Promise<Channel[]> => {
         JOIN tb_canal_estados e ON c.esc_id = e.esc_id
         JOIN tb_parametros_sensor p ON c.par_id = p.par_id
       `);
-      return result.rows;
-    } finally {
-      client.release();
-    }
-  };
-  
-  
-  // Obtener un canal por ID con el nombre del nodo y el nombre del estado de canal
-  export const getChannelById = async (can_id: string): Promise<Channel | null> => {
-    const client = await pool.connect();
-    try {
-      const result = await client.query(
-        `
+    return result.rows;
+  } finally {
+    client.release();
+  }
+};
+
+
+// Obtener un canal por ID con el nombre del nodo y el nombre del estado de canal
+export const getChannelById = async (can_id: string): Promise<Channel | null> => {
+  const client = await pool.connect();
+  try {
+    const result = await client.query(
+      `
         SELECT 
           c.can_id, 
           c.can_nombre, 
@@ -59,14 +60,14 @@ export const getAllChannels = async (): Promise<Channel[]> => {
         JOIN tb_canal_estados e ON c.esc_id = e.esc_id
         WHERE c.can_id = $1
         `,
-        [can_id]
-      );
-      return result.rowCount && result.rowCount > 0 ? result.rows[0] : null;
-    } finally {
-      client.release();
-    }
-  };
-  
+      [can_id]
+    );
+    return result.rowCount && result.rowCount > 0 ? result.rows[0] : null;
+  } finally {
+    client.release();
+  }
+};
+
 
 // Actualizar un canal por ID
 export const updateChannelById = async (can_id: string, channelData: Channel): Promise<boolean> => {
@@ -93,39 +94,56 @@ export const deleteChannelById = async (can_id: string): Promise<boolean> => {
   }
 };
 
-// Crear un nuevo canal y sus parámetros
 export const createChannelWithParams = async (channelData: Channel, parameterData: Parameter): Promise<Channel> => {
   const client = await pool.connect();
+
   try {
     await client.query('BEGIN'); // Iniciar una transacción
 
-    // Insertar el canal
-    const channelResult = await client.query(
-      'INSERT INTO tb_canal (can_id, can_nombre, esc_id, par_id, nod_id) VALUES ($1, $2, $3, $4, $5) RETURNING *',
-      [channelData.can_id, channelData.can_nombre, channelData.esc_id, channelData.par_id, channelData.nod_id]
-    );
-    const newChannel = channelResult.rows[0];
+    // Generar nuevos UUIDs para `can_id` y `par_id` si están vacíos
+    const can_id = channelData.can_id || uuidv4();
+    // Ejemplo de generación de UUID en la función createChannelWithParams
+    const parameterId = parameterData.par_id || uuidv4();
 
-    // Insertar los parámetros
+    const parameterDataWithId = {
+      ...parameterData,
+      par_id: parameterId,
+      par_canal: channelData.can_nombre
+    };
+
+    console.log('hola', parameterDataWithId)
+
     await client.query(
-      `INSERT INTO tb_parametro (
-        par_id, par_canal, par_a, par_b, par_c, par_d, par_a1, par_b1,
-        par_temp_linear_factor, par_valor_campo_b, par_valor_campo_d, par_zero_read_digits, par_zero_read_temp,
-        par_offset_units, par_linear_gage_factor, par_thermal_factor, par_valor_fabrica_c, par_valor_campo_c,
-        par_marca, par_num_serie, par_elevation_borehole, par_depth_transducer, par_dip, par_prof_transducer,
-        par_cota_transducer, par_longitud_cable, par_rango_del_sensor
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27)`,
+      `INSERT INTO tb_parametros_sensor (
+    par_id, par_canal, par_a, par_b, par_c, par_d, par_a1, par_b1,
+    par_temp_linear_factor, par_valor_campo_b, par_valor_campo_d, par_zero_read_digits, par_zero_read_temp,
+    par_offset_units, par_linear_gage_factor, par_valor_fabrica_c, par_valor_campo_c,
+    par_marca, par_num_serie, par_elevation_borehole, par_depth_transducer, par_dip, par_prof_transducer,
+    par_cota_transducer, par_longitud_cable, par_rango_del_sensor, par_thermal_factor
+  ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27)`,
       [
-        parameterData.par_id, parameterData.par_canal, parameterData.par_a, parameterData.par_b, parameterData.par_c,
-        parameterData.par_d, parameterData.par_a1, parameterData.par_b1, parameterData.par_temp_linear_factor,
-        parameterData.par_valor_campo_b, parameterData.par_valor_campo_d, parameterData.par_zero_read_digits,
-        parameterData.par_zero_read_temp, parameterData.par_offset_units, parameterData.par_linear_gage_factor,
-        parameterData.par_thermal_factor, parameterData.par_valor_fabrica_c, parameterData.par_valor_campo_c,
-        parameterData.par_marca, parameterData.par_num_serie, parameterData.par_elevation_borehole,
-        parameterData.par_depth_transducer, parameterData.par_dip, parameterData.par_prof_transducer,
-        parameterData.par_cota_transducer, parameterData.par_longitud_cable, parameterData.par_rango_del_sensor
+        parameterDataWithId.par_id, parameterDataWithId.par_canal, parameterDataWithId.par_a,
+        parameterDataWithId.par_b, parameterDataWithId.par_c, parameterDataWithId.par_d,
+        parameterDataWithId.par_a1, parameterDataWithId.par_b1, parameterDataWithId.par_temp_linear_factor,
+        parameterDataWithId.par_valor_campo_b, parameterDataWithId.par_valor_campo_d,
+        parameterDataWithId.par_zero_read_digits, parameterDataWithId.par_zero_read_temp,
+        parameterDataWithId.par_offset_units, parameterDataWithId.par_linear_gage_factor,
+        parameterDataWithId.par_valor_fabrica_c, parameterDataWithId.par_valor_campo_c,
+        parameterDataWithId.par_marca, parameterDataWithId.par_num_serie,
+        parameterDataWithId.par_elevation_borehole, parameterDataWithId.par_depth_transducer,
+        parameterDataWithId.par_dip, parameterDataWithId.par_prof_transducer,
+        parameterDataWithId.par_cota_transducer, parameterDataWithId.par_longitud_cable,
+        parameterDataWithId.par_rango_del_sensor, parameterDataWithId.par_thermal_factor
       ]
     );
+
+
+    // Insertar el canal ahora que `par_id` existe en `tb_parametros_sensor`
+    const channelResult = await client.query(
+      'INSERT INTO tb_canal (can_id, can_nombre, esc_id, par_id, nod_id) VALUES ($1, $2, $3, $4, $5) RETURNING *',
+      [can_id, channelData.can_nombre, channelData.esc_id, parameterId, channelData.nod_id]
+    );
+    const newChannel = channelResult.rows[0];
 
     await client.query('COMMIT'); // Confirmar la transacción
     return newChannel;
