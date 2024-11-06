@@ -1,6 +1,7 @@
 'use client';
 import React, { useEffect, useState } from 'react';
 import { socket } from  "../socket";
+import { socket } from  "../socket";
 
 import SideNav from '@/app/ui/dashboard/sidenav';
 import { Map } from '../ui/map';
@@ -16,6 +17,7 @@ import {
   CategoryScale,
 } from 'chart.js';
 import { Channel } from '../lib/definitions/channel';
+
 
 
 // Register the necessary components for Chart.js
