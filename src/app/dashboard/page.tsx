@@ -1,4 +1,5 @@
 'use client';
+import React, { useEffect, useState } from 'react';
 
 import SideNav from '@/app/ui/dashboard/sidenav';
 import { Map } from '../ui/map';
@@ -13,12 +14,29 @@ import {
   Legend,
   CategoryScale,
 } from 'chart.js';
+import { Channel } from '../lib/definitions/channel';
 
 // Register the necessary components for Chart.js
 ChartJS.register(LineElement, PointElement, LinearScale, Title, Tooltip, Legend, CategoryScale);
 
 export default function Layout() {
   // Data for the chart
+
+  const [channels, setChannels] = useState<Channel[]>([]);
+
+  useEffect(() => {
+    const fetchChannels = async () => {
+      try {
+        const response = await fetch('/api/channels');
+        const data = await response.json();
+        setChannels(data);
+      } catch (error) {
+        console.error('Error fetching channels:', error);
+      }
+    };
+    fetchChannels();
+  }, []);
+
   const data = {
     labels: ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul'],
     datasets: [
@@ -118,38 +136,16 @@ export default function Layout() {
             </div>
 
             {/* Placeholder content for sensors */}
-            <div className="bg-white rounded-2xl p-4 w-2/7 shadow-md">
+            <div className="bg-white rounded-2xl p-4 w-1/5 shadow-md">
               <h2 className="text-xl font-bold mb-4 text-custom-blue">Sensores</h2>
               <ul className="space-y-3">
-                {[
-                  { id: 'D2300', coordinates: [-69.0705, -24.2758], level: 'ALTO', color: 'red' },
-                  { id: 'D2301', coordinates: [-69.0745, -24.2731], level: 'ALTO', color: 'red' },
-                  { id: 'D2302', coordinates: [-69.0760, -24.2762], level: 'MEDIO', color: 'yellow' },
-                  { id: 'D2303', coordinates: [-69.0685, -24.2770], level: 'MEDIO', color: 'yellow' },
-                  { id: 'D2304', coordinates: [-69.0755, -24.2720], level: 'BAJO', color: 'green' },
-                  { id: 'D2305', coordinates: [-69.0690, -24.2725], level: 'BAJO', color: 'green' },
-                  { id: 'D2306', coordinates: [-69.0725, -24.2710], level: 'BAJO', color: 'green' },
-                  { id: 'D2307', coordinates: [-69.0740, -24.2775], level: 'ALTO', color: 'red' },
-                  { id: 'D2308', coordinates: [-69.0705, -24.2738], level: 'MEDIO', color: 'yellow' },
-                  { id: 'D2309', coordinates: [-69.0732, -24.2705], level: 'BAJO', color: 'green' },
-                  { id: 'D2310', coordinates: [-69.0765, -24.2748], level: 'ALTO', color: 'red' },
-                  { id: 'D2311', coordinates: [-69.0695, -24.2780], level: 'MEDIO', color: 'yellow' },
-                ]
-                  .sort((a, b) => {
-                    const levelOrder: Record<string, number> = { ALTO: 1, MEDIO: 2, BAJO: 3 };
-                    return levelOrder[a.level] - levelOrder[b.level];
-                  })
-                  .map((sensor) => (
-                    <li key={sensor.id} className="flex items-center">
-                      <span
-                        className={`inline-block w-4 h-4 rounded-full mr-3`}
-                        style={{ backgroundColor: sensor.color }}
-                      ></span>
-                      <span className="text-gray-700 font-medium">
-                        Piezómetro {sensor.id} - nivel {sensor.level}
-                      </span>
-                    </li>
-                  ))}
+                {channels.map((channel) => (
+                  <li key={channel.can_id} className="flex items-center">
+                    <span className="text-gray-700 text-xs font-medium">
+                      {channel.can_nombre} - Nodo {channel.nodo_nombre}
+                    </span>
+                  </li>
+                ))}
               </ul>
             </div>
           </div>
