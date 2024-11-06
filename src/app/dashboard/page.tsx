@@ -32,6 +32,7 @@ export default function Layout() {
 'use client';
 import React, { useEffect, useState } from 'react';
 import { socket } from  "../socket";
+import { socket } from  "../socket";
 
 import SideNav from '@/app/ui/dashboard/sidenav';
 import { Map } from '../ui/map';
@@ -49,6 +50,7 @@ import {
 import { Channel } from '../lib/definitions/channel';
 
 
+
 // Register the necessary components for Chart.js
 ChartJS.register(LineElement, PointElement, LinearScale, Title, Tooltip, Legend, CategoryScale);
 
@@ -62,6 +64,17 @@ export default function Layout() {
 
 
   useEffect(() => {
+    const fetchChannels = async () => {
+      try {
+        const response = await fetch('/api/channels');
+        const data = await response.json();
+        setChannels(data);
+      } catch (error) {
+        console.error('Error fetching channels:', error);
+      }
+    };
+    fetchChannels();
+
     if (socket.connected) {
       onConnect();
     }
@@ -193,10 +206,12 @@ export default function Layout() {
       <div className="w-72 flex-none z-10 bg-white">
         <SideNav />
       </div>
+
       <div>
         <p>Status: { isConnected ? "connected" : "disconnected" }</p>
         <p>Transport: { transport }</p>
       </div>
+
 
       {/* Main content */}
       <div className="bg-white rounded-2xl flex-1 overflow-auto z-0 p-4">
