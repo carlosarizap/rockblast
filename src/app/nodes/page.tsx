@@ -63,10 +63,7 @@ const NodesPage = () => {
             <h1 className="text-white text-2xl font-bold">Gestión de Pozos</h1>
             <CreateButton href="/nodes/create" label="Crear Pozo" /> {/* Custom button */}
           </div>
-          <div className="bg-white p-1 rounded-xl flex-1 overflow-auto">
-<<<<<<< HEAD
-            <Table users={users} onUserDeleted={fetchUsers} /> {/* Pass the fetchUsers function to Table */}
-=======
+          <div className="bg-white p-1 rounded-xl flex-1 overflow-auto shadow-md" >
             <Table nodes={nodes} onNodeDeleted={fetchNodes} /> {/* Pass the fetchNodes function to Table */}
 >>>>>>> ab8a859c561150266ef579243a71d6784f584035
           </div>

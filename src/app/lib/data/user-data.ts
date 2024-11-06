@@ -29,9 +29,6 @@ export const getUserByIdFromDB = async (id: string): Promise<User | null> => {
   const client = await pool.connect();
   try {
     const result = await client.query('SELECT * FROM tb_usuario WHERE id = $1', [id]);
-
-    console.log("resilt", result);
-
     if (result.rowCount === 0) {
       return null;
     }

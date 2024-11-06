@@ -24,9 +24,6 @@ export async function POST(req: Request) {
 =======
     // Parse the JSON body
     const body = await req.json(); // Correct way to parse body
-
-    console.log(body)
-
     const { usu_id_rut, usu_nombre, usu_apellido, usu_correo, rol_id, usu_pass, usu_estado } = body;
 
     // Validate required fields
