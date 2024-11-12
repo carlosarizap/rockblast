@@ -9,6 +9,7 @@ export interface Channel {
     estado_nombre?: string;             // Name of the channel's status
   
     // Additional fields from tb_parametro
+    esc_nombre?: string;                 // Brand of the parameter
     par_marca?: string;                 // Brand of the parameter
     par_num_serie?: string;             // Serial number of the parameter
     par_elevation_borehole?: number;    // Elevation of the borehole
