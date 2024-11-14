@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import Papa, { ParseResult } from 'papaparse';
 import SideNav from '@/app/ui/dashboard/sidenav';
 import { useSession, signIn } from 'next-auth/react';
+import { log } from 'console';
 
 export default function UploadsPage() {
     const [file, setFile] = useState<File | null>(null);
@@ -46,7 +47,8 @@ export default function UploadsPage() {
                 const jsonData = results.data;
                 // Send the JSON data to the API
                 try {
-                    const response = await fetch('http://127.0.0.1:8000/datos/cargar', {
+                    console.log(jsonData)
+                    const response = await fetch('http://localhost:5000/api/v1/data/bruta', {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',
