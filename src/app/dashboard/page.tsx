@@ -15,7 +15,6 @@ import {
   CategoryScale,
   ChartOptions,
 } from 'chart.js';
-import { Channel } from '../lib/definitions/channel';
 
 ChartJS.register(LineElement, PointElement, LinearScale, Title, Tooltip, Legend, CategoryScale);
 
@@ -35,70 +34,100 @@ const applyMovingAverage = (data: number[], windowSize: number) => {
 };
 
 export default function Layout() {
-  const [channels, setChannels] = useState<Channel[]>([]);
+  const [channels, setChannels] = useState<any[]>([]);
+  const [waterData, setWaterData] = useState<LevelWaterData[]>([]);
   const [isConnected, setIsConnected] = useState(false);
-  const [transport, setTransport] = useState<string>("N/A");
+  const [transport, setTransport] = useState<string>('N/A');
   const [chartData, setChartData] = useState({
     labels: [] as string[],
-    datasets: [] as { label: string; data: number[]; borderColor: string; borderWidth: number; fill: boolean; pointBackgroundColor: string; pointRadius: number; tension: number; }[],
+    datasets: [] as {
+      label: string;
+      data: number[];
+      borderColor: string;
+      borderWidth: number;
+      fill: boolean;
+      pointBackgroundColor: string;
+      pointRadius: number;
+      tension: number;
+    }[],
   });
   const [selectedChannel, setSelectedChannel] = useState<string | null>(null);
-  const [waterData, setWaterData] = useState<LevelWaterData[]>([]);
-  const [yAxisRange, setYAxisRange] = useState({ min: 2784, max: 2786 }); // Default y-axis range
+  const [yAxisRange, setYAxisRange] = useState({ min: 2784, max: 2786 });
 
+  // Fetch initial data and setup socket listeners
   useEffect(() => {
-    const handleConnect = () => {
-      setIsConnected(true);
-      setTransport(socket.io.engine.transport.name);
+    const fetchData = async () => {
+      try {
+        const [initialWaterData, initialChannelData] = await Promise.all([
+          fetch('http://localhost:5000/api/v1/canal/levelWater').then((res) => res.json()).then((data) => data.response),
+          fetch('http://localhost:5000/api/v1/canal/status').then((res) => res.json()).then((data) => data.response),
+        ]);
+        setWaterData(initialWaterData);
+        setChannels(initialChannelData);
+
+        setupSocketListeners();
+      } catch (error) {
+        console.error('Error fetching initial data:', error);
+      }
     };
 
-    const handleDisconnect = () => {
-      setIsConnected(false);
-      setTransport("N/A");
+    const setupSocketListeners = () => {
+      socket.on('levelWaterData', (data) => {
+        setWaterData((prev) => {
+          if (JSON.stringify(data.levelWater) !== JSON.stringify(prev)) {
+            console.log('Recibiendo del socket level water');
+            setWaterDataForChart(data.levelWater);
+            return data.levelWater;
+          }
+          return prev;
+        });
+      });
+
+      socket.on('statusCanalData', (data) => {
+        setChannels((prev) => {
+          if (JSON.stringify(data.statusCanal) !== JSON.stringify(prev)) {
+            console.log('Recibiendo del socket status canal');
+            return data.statusCanal;
+          }
+          return prev;
+        });
+      });
+
+      socket.on('connect', () => setIsConnected(true));
+      socket.on('disconnect', () => setIsConnected(false));
+      socket.io.engine.on('upgrade', (transport) => setTransport(transport.name));
+
+      return () => {
+        socket.off('levelWaterData');
+        socket.off('statusCanalData');
+        socket.off('connect');
+        socket.off('disconnect');
+        socket.io.engine.off('upgrade');
+      };
     };
 
-    const handleTransportUpgrade = (transport: { name: string }) => {
-      setTransport(transport.name);
-    };
-
-    const handleWaterData = (data: { levelWater: LevelWaterData[] }) => {
-      setWaterData(data.levelWater);
-    };
-
-    const handleStatusCanalData = (data: { statusCanal: Channel[] }) => {
-      setChannels(data.statusCanal);
-    };
-
-    socket.on("connect", handleConnect);
-    socket.on("disconnect", handleDisconnect);
-    socket.on("levelWaterData", handleWaterData);
-    socket.on("statusCanalData", handleStatusCanalData);
-    socket.io.engine.on("upgrade", handleTransportUpgrade);
-
-    return () => {
-      socket.off("connect", handleConnect);
-      socket.off("disconnect", handleDisconnect);
-      socket.off("levelWaterData", handleWaterData);
-      socket.off("statusCanalData", handleStatusCanalData);
-      socket.io.engine.off("upgrade", handleTransportUpgrade);
-    };
+    fetchData();
   }, []);
 
+  // Recalculate chart data when water data or selected channel changes
   useEffect(() => {
+    setWaterDataForChart();
+  }, [selectedChannel, waterData]);
+
+  const setWaterDataForChart = (data = waterData) => {
     if (selectedChannel) {
-      const formattedData = waterData
+      const filteredData = data
+        .filter((item) => item.can_nombre === selectedChannel)
         .map((item) => ({
           date: new Date(item.dbr_fecha),
           polyValue: parseFloat(item.cal_cota_pres_corr_poly),
-          channelName: item.can_nombre,
-        }))
-        .filter((item) => item.channelName === selectedChannel);
+        }));
 
-      updateChartData(formattedData);
+      updateChartData(filteredData);
     }
-  }, [selectedChannel, waterData]);
+  };
 
-  const updateChartData = (data: { date: Date; polyValue: number; channelName: string }[]) => {
+  const updateChartData = (data: { date: Date; polyValue: number }[]) => {
     if (data.length === 0) {
       setChartData({
         labels: [],
@@ -118,21 +147,13 @@ export default function Layout() {
       return;
     }
 
-    const latestDate = data.reduce((max, item) => (item.date > max ? item.date : max), data[0].date);
-    const sevenDaysBeforeLatest = new Date(latestDate);
-    sevenDaysBeforeLatest.setDate(latestDate.getDate() - 7);
-
-    const filteredData = data.filter((item) => item.date >= sevenDaysBeforeLatest);
-    const values = filteredData.map((data) => data.polyValue);
-    const smoothedValues = applyMovingAverage(values, 3);
-
-    // Calculate dynamic y-axis range based on smoothedValues
+    const smoothedValues = applyMovingAverage(data.map((d) => d.polyValue), 3);
     const minLevel = Math.min(...smoothedValues);
     const maxLevel = Math.max(...smoothedValues);
-    setYAxisRange({ min: minLevel - 2, max: maxLevel + 2 }); // Add padding for better visibility
+    setYAxisRange({ min: minLevel - 2, max: maxLevel + 2 });
 
     setChartData({
-      labels: filteredData.map((data) => data.date.toLocaleDateString()),
+      labels: data.map((d) => d.date.toLocaleDateString()),
       datasets: [
         {
           label: 'Cota Presión Corrección Polinómica',
@@ -148,57 +169,21 @@ export default function Layout() {
     });
   };
 
-  const handleChannelSelect = (channelName: string) => {
-    setSelectedChannel(channelName);
-  };
-
   const chartOptions: ChartOptions<'line'> = {
     responsive: true,
     maintainAspectRatio: false,
-    plugins: {
-      legend: {
-        display: false,
-      },
-      tooltip: {
-        enabled: true,
-      },
-    },
+    plugins: { legend: { display: false }, tooltip: { enabled: true } },
     scales: {
-      x: {
-        type: 'category',
-        grid: {
-          display: false,
-        },
-        title: {
-          display: true,
-          text: 'Días',
-        },
-        ticks: {
-          maxTicksLimit: 5, // Limits the number of ticks shown on the x-axis
-          autoSkip: true, // Automatically skips labels if there are too many
-        },
-      },
-      y: {
-        min: yAxisRange.min,
-        max: yAxisRange.max,
-        grid: {
-          display: true,
-        },
-        title: {
-          display: true,
-          text: 'Niveles',
-        },
-      },
+      x: { title: { display: true, text: 'Días' }, ticks: { maxTicksLimit: 5, autoSkip: true } },
+      y: { min: yAxisRange.min, max: yAxisRange.max, title: { display: true, text: 'Niveles' } },
     },
   };
-
 
   return (
     <div className="flex h-screen">
       <div className="w-72 flex-none z-10 bg-white">
         <SideNav />
       </div>
-
       <div className="bg-white rounded-2xl flex-1 overflow-auto z-0 p-4">
         <div className="h-full bg-gradient-to-br from-custom-blue to-custom-blue-light p-4 flex flex-col gap-4 rounded-2xl">
           <div className="flex gap-4 flex-grow">
@@ -215,15 +200,14 @@ export default function Layout() {
                 </div>
               </div>
             </div>
-
             <div className="bg-white rounded-2xl p-4 w-[21%] shadow-md">
               <h2 className="text-xl font-bold mb-4 text-custom-blue">Sensores</h2>
               <ul className="space-y-3">
                 {channels.map((channel) => (
                   <li
                     key={channel.can_id}
-                    className={`flex items-center cursor-pointer`}
-                    onClick={() => handleChannelSelect(channel.can_nombre)}
+                    className="flex items-center cursor-pointer"
+                    onClick={() => setSelectedChannel(channel.can_nombre)}
                   >
                     <span className={`text-gray-700 text-xs ${selectedChannel === channel.can_nombre ? 'font-bold' : 'font-medium'}`}>
                       {channel.can_nombre} - Estado {channel.esc_nombre}
@@ -234,8 +218,6 @@ export default function Layout() {
             </div>
           </div>
         </div>
-      </div>
-      <div>
       </div>
     </div>
   );
