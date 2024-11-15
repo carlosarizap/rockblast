@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import Papa, { ParseResult } from 'papaparse';
 import SideNav from '@/app/ui/dashboard/sidenav';
 import { useSession, signIn } from 'next-auth/react';
+import { log } from 'console';
 
 export default function UploadsPage() {
     const [file, setFile] = useState<File | null>(null);
