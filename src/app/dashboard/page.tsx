@@ -1,4 +1,4 @@
-'use client';
+'use client'
 import React, { useEffect, useState } from 'react';
 import { socket } from '../socket';
 import SideNav from '@/app/ui/dashboard/sidenav';
@@ -35,9 +35,11 @@ const applyMovingAverage = (data: number[], windowSize: number) => {
 
 export default function Layout() {
   const [channels, setChannels] = useState<any[]>([]);
+  const [filteredChannels, setFilteredChannels] = useState<any[]>([]);
   const [waterData, setWaterData] = useState<LevelWaterData[]>([]);
-  const [isConnected, setIsConnected] = useState(false);
-  const [transport, setTransport] = useState<string>('N/A');
+  const [selectedChannel, setSelectedChannel] = useState<string | null>(null);
+  const [selectedNode, setSelectedNode] = useState<string | null>(null);
+  const [isSocketActive, setIsSocketActive] = useState(false); // New state for socket indicator
   const [chartData, setChartData] = useState({
     labels: [] as string[],
     datasets: [] as {
@@ -51,7 +53,6 @@ export default function Layout() {
       tension: number;
     }[],
   });
-  const [selectedChannel, setSelectedChannel] = useState<string | null>(null);
   const [yAxisRange, setYAxisRange] = useState({ min: 2784, max: 2786 });
 
   // Fetch initial data and setup socket listeners
@@ -62,57 +63,47 @@ export default function Layout() {
           fetch('http://localhost:5000/api/v1/canal/levelWater').then((res) => res.json()).then((data) => data.response),
           fetch('http://localhost:5000/api/v1/canal/status').then((res) => res.json()).then((data) => data.response),
         ]);
+
         setWaterData(initialWaterData);
         setChannels(initialChannelData);
-
+        setFilteredChannels(initialChannelData);
         setupSocketListeners();
       } catch (error) {
+
         console.error('Error fetching initial data:', error);
       }
     };
 
     const setupSocketListeners = () => {
+
       socket.on('levelWaterData', (data) => {
-        setWaterData((prev) => {
-          if (JSON.stringify(data.levelWater) !== JSON.stringify(prev)) {
-            console.log('Recibiendo del socket level water');
-            setWaterDataForChart(data.levelWater);
-            return data.levelWater;
-          }
-          return prev;
-        });
+        setWaterDataForChart(data.levelWater);
       });
 
       socket.on('statusCanalData', (data) => {
-        setChannels((prev) => {
-          if (JSON.stringify(data.statusCanal) !== JSON.stringify(prev)) {
-            console.log('Recibiendo del socket status canal');
-            return data.statusCanal;
-          }
-          return prev;
-        });
+        setChannels(data.statusCanal);
+        setFilteredChannels(data.statusCanal);
       });
 
-      socket.on('connect', () => setIsConnected(true));
-      socket.on('disconnect', () => setIsConnected(false));
-      socket.io.engine.on('upgrade', (transport) => setTransport(transport.name));
-
       return () => {
-        socket.off('levelWaterData');
-        socket.off('statusCanalData');
         socket.off('connect');
         socket.off('disconnect');
-        socket.io.engine.off('upgrade');
+        socket.off('levelWaterData');
+        socket.off('statusCanalData');
       };
     };
 
     fetchData();
   }, []);
 
-  // Recalculate chart data when water data or selected channel changes
+  // Filter channels when selectedNode changes
   useEffect(() => {
-    setWaterDataForChart();
-  }, [selectedChannel, waterData]);
+    if (selectedNode) {
+      setFilteredChannels(channels.filter((channel) => channel.nod_nombre === selectedNode));
+    } else {
+      setFilteredChannels(channels);
+    }
+  }, [selectedNode, channels]);
 
   const setWaterDataForChart = (data = waterData) => {
     if (selectedChannel) {
@@ -180,11 +171,25 @@ export default function Layout() {
   };
 
   return (
-    <div className="flex h-screen">
+    <div className="flex h-screen relative">
+      {/* Socket Indicator */}
+      <div
+        className={`absolute top-4 right-4 w-4 h-4 rounded-full ${isSocketActive ? 'bg-green-500' : 'bg-red-500'
+          }`}
+        title={isSocketActive ? 'Socket is active' : 'Socket is inactive'}
+      ></div>
+
       <div className="w-72 flex-none z-10 bg-white">
         <SideNav />
       </div>
       <div className="bg-white rounded-2xl flex-1 overflow-auto z-0 p-4">
+
+        <div
+          className={`absolute top-4 right-4 w-4 h-4 rounded-full ${isSocketActive ? 'bg-green-500' : 'bg-red-500'
+            }`}
+          title={isSocketActive ? 'Socket is active' : 'Socket is inactive'}
+        ></div>
+        
         <div className="h-full bg-gradient-to-br from-custom-blue to-custom-blue-light p-4 flex flex-col gap-4 rounded-2xl">
           <div className="flex gap-4 flex-grow">
             <div className="gap-4 flex-grow flex flex-col">
@@ -193,7 +198,7 @@ export default function Layout() {
               </div>
               <div className="rounded-2xl flex-[1] bg-white p-4 shadow-md">
                 <h3 className="text-lg font-semibold mb-4 text-custom-blue">
-                  {selectedChannel ? `${selectedChannel}` : ""}
+                  {selectedChannel ? `${selectedChannel}` : ''}
                 </h3>
                 <div style={{ height: '200px', width: '100%' }}>
                   <Line data={chartData} options={chartOptions} />
@@ -201,15 +206,32 @@ export default function Layout() {
               </div>
             </div>
             <div className="bg-white rounded-2xl p-4 w-[21%] shadow-md">
-              <h2 className="text-xl font-bold mb-4 text-custom-blue">Sensores</h2>
+              <div className="flex justify-between items-center mb-4">
+                <h2 className="text-xl font-bold text-custom-blue">Sensores</h2>
+                <select
+                  className="border border-gray-300 rounded-md text-sm px-2 py-1"
+                  value={selectedNode || ''}
+                  onChange={(e) => setSelectedNode(e.target.value || null)}
+                >
+                  <option value="">Todos</option>
+                  {Array.from(new Set(channels.map((channel) => channel.nod_nombre))).map((node) => (
+                    <option key={node} value={node}>
+                      {node}
+                    </option>
+                  ))}
+                </select>
+              </div>
               <ul className="space-y-3">
-                {channels.map((channel) => (
+                {filteredChannels.map((channel) => (
                   <li
                     key={channel.can_id}
                     className="flex items-center cursor-pointer"
                     onClick={() => setSelectedChannel(channel.can_nombre)}
                   >
-                    <span className={`text-gray-700 text-xs ${selectedChannel === channel.can_nombre ? 'font-bold' : 'font-medium'}`}>
+                    <span
+                      className={`text-gray-700 text-xs ${selectedChannel === channel.can_nombre ? 'font-bold' : 'font-medium'
+                        }`}
+                    >
                       {channel.can_nombre} - Estado {channel.esc_nombre}
                     </span>
                   </li>
