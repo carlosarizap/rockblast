@@ -15,6 +15,80 @@ import {
   CategoryScale,
   ChartOptions,
 } from 'chart.js';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import {
+  faCircleArrowDown,
+  faCircleArrowUp,
+  faTriangleExclamation,
+  faBan,
+  faCircleCheck,
+  faTools,
+  faCheck,
+  faThermometer,
+  faCircle,
+} from '@fortawesome/free-solid-svg-icons';
+
+const getStatusIcon = (status: string) => {
+  switch (status.toLowerCase()) {
+    case 'bajo':
+      return (
+        <FontAwesomeIcon
+          icon={faCircleArrowDown}
+          className="text-blue-500"
+          size="lg"
+          title="Bajo"
+        />
+      );
+    case 'medio':
+      return (
+        <FontAwesomeIcon
+          icon={faCircleCheck}
+          className="text-green-500"
+          size="lg"
+          title="Medio"
+        />
+      );
+    case 'alto':
+      return (
+        <FontAwesomeIcon
+          icon={faCircleArrowUp}
+          className="text-red-500"
+          size="lg"
+          title="Alto"
+        />
+      );
+    case 'problema':
+      return (
+        <FontAwesomeIcon
+          icon={faTriangleExclamation}
+          className="text-yellow-500"
+          size="lg"
+          title="Problema"
+        />
+      );
+    case 'deshabilitado':
+      return (
+        <FontAwesomeIcon
+          icon={faBan}
+          className="text-gray-500"
+          size="lg"
+          title="Deshabilitado"
+        />
+      );
+    case 'operativo':
+      return (
+        <FontAwesomeIcon
+          icon={faCheck}
+          className="text-teal-500"
+          size="lg"
+          title="Operativo"
+        />
+      );
+    default:
+      return null;
+  }
+};
+
 
 ChartJS.register(LineElement, PointElement, LinearScale, Title, Tooltip, Legend, CategoryScale);
 
@@ -38,8 +112,10 @@ export default function Layout() {
   const [filteredChannels, setFilteredChannels] = useState<any[]>([]);
   const [waterData, setWaterData] = useState<LevelWaterData[]>([]);
   const [selectedChannel, setSelectedChannel] = useState<string | null>(null);
+  const [selectedNodeName, setSelectedNodeName] = useState<string | null>(null);
   const [selectedNode, setSelectedNode] = useState<string | null>(null);
-  const [isSocketActive, setIsSocketActive] = useState(false); // New state for socket indicator
+  const [isConnected, setIsConnected] = useState(false);
+  const [transport, setTransport] = useState<string>('N/A');
   const [chartData, setChartData] = useState({
     labels: [] as string[],
     datasets: [] as {
@@ -58,47 +134,66 @@ export default function Layout() {
   useEffect(() => {
     setWaterDataForChart();
   }, [selectedChannel, waterData]);
-  
+
   // Fetch initial data and setup socket listeners
   useEffect(() => {
     const fetchData = async () => {
       try {
         const [initialWaterData, initialChannelData] = await Promise.all([
-          fetch('http://localhost:5000/api/v1/canal/levelWater').then((res) => res.json()).then((data) => data.response),
-          fetch('http://localhost:5000/api/v1/canal/status').then((res) => res.json()).then((data) => data.response),
+          fetch('http://localhost:5000/api/v1/canal/levelWater')
+            .then((res) => res.json())
+            .then((data) => data.response),
+          fetch('http://localhost:5000/api/v1/canal/status')
+            .then((res) => res.json())
+            .then((data) => data.response),
         ]);
-
         setWaterData(initialWaterData);
         setChannels(initialChannelData);
-        setFilteredChannels(initialChannelData);
-        setupSocketListeners();
-      } catch (error) {
 
+        console.log(initialChannelData)
+      } catch (error) {
         console.error('Error fetching initial data:', error);
       }
     };
 
     const setupSocketListeners = () => {
-
       socket.on('levelWaterData', (data) => {
-        setWaterDataForChart(data.levelWater);
+        console.log('Socket data received:', data);
+        setWaterData((prev) => {
+          if (JSON.stringify(data.levelWater) !== JSON.stringify(prev)) {
+            setWaterDataForChart(data.levelWater);
+            return data.levelWater;
+          }
+          return prev;
+        });
       });
 
       socket.on('statusCanalData', (data) => {
         setChannels(data.statusCanal);
-        setFilteredChannels(data.statusCanal);
       });
 
+      socket.on('connect', () => setIsConnected(true));
+      socket.on('disconnect', () => setIsConnected(false));
+      socket.io.engine.on('upgrade', (transport) => setTransport(transport.name));
+
       return () => {
-        socket.off('connect');
-        socket.off('disconnect');
         socket.off('levelWaterData');
         socket.off('statusCanalData');
+        socket.off('connect');
+        socket.off('disconnect');
+        socket.io.engine.off('upgrade');
       };
     };
 
     fetchData();
+    setupSocketListeners();
   }, []);
+
+  useEffect(() => {
+    setWaterDataForChart();
+  }, [waterData, selectedChannel]);
+
+
 
   // Filter channels when selectedNode changes
   useEffect(() => {
@@ -110,9 +205,6 @@ export default function Layout() {
   }, [selectedNode, channels]);
 
   const setWaterDataForChart = (data = waterData) => {
-
-    console.log(data)
-
     if (selectedChannel) {
       const filteredData = data
         .filter((item) => item.can_nombre === selectedChannel)
@@ -185,18 +277,7 @@ export default function Layout() {
         <SideNav />
       </div>
       <div className="bg-white rounded-2xl flex-1 overflow-auto z-0 p-4">
-
-
-
         <div className="h-full bg-gradient-to-br from-custom-blue to-custom-blue-light p-4 flex flex-col gap-4 rounded-2xl">
-
-          {/* Socket Indicator */}
-          <div
-            className={`absolute top-5 m-1 right-5 w-3 h-3 rounded-full ${isSocketActive ? 'bg-green-500' : 'bg-red-500'
-              }`}
-            title={isSocketActive ? 'Socket is active' : 'Socket is inactive'}
-          ></div>
-
           <div className="flex gap-4 flex-grow">
             <div className="gap-4 flex-grow flex flex-col">
               <div className="rounded-2xl flex-[1.5] w-full shadow-md">
@@ -204,16 +285,18 @@ export default function Layout() {
               </div>
               <div className="rounded-2xl flex-[1] bg-white p-4 shadow-md">
                 <h3 className="text-lg font-semibold mb-4 text-custom-blue">
-                  {selectedChannel ? `${selectedChannel}` : ''}
+                  {selectedChannel && selectedNodeName
+                    ? `Nodo: ${selectedNodeName} - Canal: ${selectedChannel}`
+                    : 'Seleccione un canal'}
                 </h3>
                 <div style={{ height: '200px', width: '100%' }}>
                   <Line data={chartData} options={chartOptions} />
                 </div>
               </div>
             </div>
-            <div className="bg-white rounded-2xl p-4 w-[21%] shadow-md">
-              <div className="flex justify-between items-center mb-4">
-                <h2 className="text-xl font-bold text-custom-blue">Sensores</h2>
+            <div className="bg-white rounded-2xl p-2 w-[21%] shadow-md">
+              <div className="flex justify-between items-center mb-2">
+                <h2 className="text-xl mt-1 font-bold text-custom-blue">Canales</h2>
                 <select
                   className="border border-gray-300 rounded-md text-sm px-2 py-1"
                   value={selectedNode || ''}
@@ -227,23 +310,62 @@ export default function Layout() {
                   ))}
                 </select>
               </div>
-              <ul className="space-y-3">
-                {filteredChannels.map((channel) => (
-                  <li
-                    key={channel.can_id}
-                    className="flex items-center cursor-pointer"
-                    onClick={() => setSelectedChannel(channel.can_nombre)}
-                  >
-                    <span
-                      className={`text-gray-700 text-xs ${selectedChannel === channel.can_nombre ? 'font-bold' : 'font-medium'
+
+              <div className="max-h-[560px] overflow-y-auto pr-2 custom-scrollbar">
+                <ul className="space-y-2">
+                  {filteredChannels.map((channel) => (
+                    <li
+                      key={channel.can_id}
+                      className={`flex items-start gap-2 cursor-pointer p-4 rounded-lg shadow-sm hover:bg-gray-200 transition-all ${selectedChannel === channel.can_nombre ? 'bg-gray-300' : 'bg-gray-100'
                         }`}
+                      onClick={() => {
+                        setSelectedChannel(channel.can_nombre);
+                        setSelectedNodeName(channel.nod_nombre);
+                      }}
                     >
-                      {channel.can_nombre} - Estado {channel.esc_nombre}
-                    </span>
-                  </li>
-                ))}
-              </ul>
+                      {/* Custom Blue Circle Icon */}
+                      <FontAwesomeIcon
+                        icon={faCircle}
+                        className="text-custom-blue self-center text-xs mt-1"
+                        size="lg"
+                        title="Node"
+                      />
+
+                      {/* Node and Channel Info */}
+                      <div className="flex-grow">
+                        {/* Top: Title */}
+                        <div className="flex justify-between items-start">
+                          <span
+                            className={`text-gray-800 text-sm ${selectedChannel === channel.can_nombre ? 'font-bold' : 'font-medium'
+                              }`}
+                          >
+                            {channel.nod_nombre} {channel.can_nombre}
+                          </span>
+                        </div>
+
+                        {/* Bottom Content */}
+                        <div className="flex justify-between items-end mt-2">
+                          {/* Bottom-Left: esc_nombre */}
+                          <div className="flex items-center gap-1">
+                            {getStatusIcon(channel.esc_nombre)}
+                            <span className="text-gray-600 text-xs">{channel.esc_nombre}</span>
+                          </div>
+
+                          {/* Bottom-Right: nia_nombre */}
+                          <div className="flex items-center gap-1">
+                            {getStatusIcon(channel.nia_nombre)}
+                            <span className="text-gray-600 text-xs">{channel.nia_nombre}</span>
+                          </div>
+                        </div>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              </div>
             </div>
+
+
+
           </div>
         </div>
       </div>
