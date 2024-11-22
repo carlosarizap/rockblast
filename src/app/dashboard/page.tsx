@@ -55,6 +55,10 @@ export default function Layout() {
   });
   const [yAxisRange, setYAxisRange] = useState({ min: 2784, max: 2786 });
 
+  useEffect(() => {
+    setWaterDataForChart();
+  }, [selectedChannel, waterData]);
+  
   // Fetch initial data and setup socket listeners
   useEffect(() => {
     const fetchData = async () => {
@@ -106,6 +110,9 @@ export default function Layout() {
   }, [selectedNode, channels]);
 
   const setWaterDataForChart = (data = waterData) => {
+
+    console.log(data)
+
     if (selectedChannel) {
       const filteredData = data
         .filter((item) => item.can_nombre === selectedChannel)
@@ -172,25 +179,24 @@ export default function Layout() {
 
   return (
     <div className="flex h-screen relative">
-      {/* Socket Indicator */}
-      <div
-        className={`absolute top-4 right-4 w-4 h-4 rounded-full ${isSocketActive ? 'bg-green-500' : 'bg-red-500'
-          }`}
-        title={isSocketActive ? 'Socket is active' : 'Socket is inactive'}
-      ></div>
+
 
       <div className="w-72 flex-none z-10 bg-white">
         <SideNav />
       </div>
       <div className="bg-white rounded-2xl flex-1 overflow-auto z-0 p-4">
 
-        <div
-          className={`absolute top-4 right-4 w-4 h-4 rounded-full ${isSocketActive ? 'bg-green-500' : 'bg-red-500'
-            }`}
-          title={isSocketActive ? 'Socket is active' : 'Socket is inactive'}
-        ></div>
-        
+
+
         <div className="h-full bg-gradient-to-br from-custom-blue to-custom-blue-light p-4 flex flex-col gap-4 rounded-2xl">
+
+          {/* Socket Indicator */}
+          <div
+            className={`absolute top-5 m-1 right-5 w-3 h-3 rounded-full ${isSocketActive ? 'bg-green-500' : 'bg-red-500'
+              }`}
+            title={isSocketActive ? 'Socket is active' : 'Socket is inactive'}
+          ></div>
+
           <div className="flex gap-4 flex-grow">
             <div className="gap-4 flex-grow flex flex-col">
               <div className="rounded-2xl flex-[1.5] w-full shadow-md">

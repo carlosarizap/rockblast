@@ -25,5 +25,5 @@ export async function middleware(req: NextRequest) {
 
 // Apply middleware to the following routes
 export const config = {
-    matcher: ['/dashboard/:path*', '/accounts/:path*', '/another-protected-path/:path*'],
+    matcher: ['/dashboard/:path*', '/accounts/:path*', '/channels/:path*', '/uploads/:path*', '/nodes/:path*'],
 };

@@ -87,10 +87,12 @@ const UpdateChannelPage = () => {
 
     const handleUpdate = async (e: React.FormEvent) => {
         e.preventDefault();
+
         const { can_nombre, esc_id, par_id, nod_id, ...parameterData } = formData;
         const channelData = { can_nombre, esc_id, par_id, nod_id };
 
         try {
+            console.log('Starting PATCH request...');
             const response = await fetch(`/api/channels/${params.can_id}`, {
                 method: 'PATCH',
                 headers: { 'Content-Type': 'application/json' },
@@ -98,17 +100,49 @@ const UpdateChannelPage = () => {
             });
 
             if (response.ok) {
-                router.push('/channels');
+                console.log('PATCH request successful. Updating real-time...');
+                await updateRealtime();
+                console.log('Real-time update complete. Redirecting to /channels...');
+                router.push('/channels'); // Ensure this line is reached
             } else {
                 const errorData = await response.json();
                 console.error('Error updating channel:', errorData);
                 alert(`Error updating channel: ${errorData.message}`);
             }
         } catch (error) {
-            console.error('Error:', error);
+            console.error('Error during update process:', error);
             alert('An unexpected error occurred.');
         }
     };
+
+    const updateRealtime = async () => {
+        try {
+            console.log('Starting POST request for real-time update...');
+            const response = await fetch('http://localhost:5000/api/v1/canal/actualizar', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({}), // Add payload if necessary
+            });
+
+            router.push('/channels');
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                console.error('POST request failed:', errorData);
+                throw new Error(`POST request failed: ${errorData.message}`);
+            }
+
+            const data = await response.json();
+            console.log('POST response data:', data.response);
+        } catch (error) {
+            console.error('Error in POST request for real-time update:', error);
+        }
+    };
+
+
+
 
     const handleNext = (e: React.MouseEvent<HTMLButtonElement>) => {
         e.preventDefault(); // Prevent form submission
