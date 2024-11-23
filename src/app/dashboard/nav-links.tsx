@@ -12,6 +12,7 @@ const links = [
   { name: 'Inicio', href: 'dashboard' },
   { name: 'Pozos', href: 'nodes' },
   { name: 'Canales', href: 'channels' },
+  { name: 'Alertas', href: 'alarms' },
 ];
 
 const adminLinks = [

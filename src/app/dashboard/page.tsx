@@ -1,5 +1,7 @@
 'use client'
 import React, { useEffect, useState } from 'react';
+import DatePicker from 'react-datepicker';
+import 'react-datepicker/dist/react-datepicker.css';
 import { socket } from '../socket';
 import SideNav from '@/app/ui/dashboard/sidenav';
 import { Map } from '../ui/map';
@@ -115,6 +117,9 @@ export default function Layout() {
   const [selectedNodeName, setSelectedNodeName] = useState<string | null>(null);
   const [selectedNode, setSelectedNode] = useState<string | null>(null);
   const [isConnected, setIsConnected] = useState(false);
+  const [startDate, setStartDate] = useState<Date>(new Date()); 
+  const [endDate, setEndDate] = useState<Date>(new Date());
+
   const [transport, setTransport] = useState<string>('N/A');
   const [chartData, setChartData] = useState({
     labels: [] as string[],
@@ -135,6 +140,18 @@ export default function Layout() {
     setWaterDataForChart();
   }, [selectedChannel, waterData]);
 
+  useEffect(() => {
+    // Obtener la fecha más reciente de los datos al cargar
+    if (waterData.length > 0) {
+      const latestDate = new Date(
+        Math.max(...waterData.map((item) => new Date(item.dbr_fecha).getTime()))
+      );
+      setEndDate(latestDate); // Fecha final
+      setStartDate(new Date(latestDate.setDate(latestDate.getDate() - 7))); // Últimos 7 días desde la fecha más reciente
+    }
+  }, [waterData]);
+  
+
   // Fetch initial data and setup socket listeners
   useEffect(() => {
     const fetchData = async () => {
@@ -149,8 +166,6 @@ export default function Layout() {
         ]);
         setWaterData(initialWaterData);
         setChannels(initialChannelData);
-
-        console.log(initialChannelData)
       } catch (error) {
         console.error('Error fetching initial data:', error);
       }
@@ -206,16 +221,23 @@ export default function Layout() {
 
   const setWaterDataForChart = (data = waterData) => {
     if (selectedChannel) {
+      // Filtrar datos por canal y rango de fechas
       const filteredData = data
-        .filter((item) => item.can_nombre === selectedChannel)
+        .filter(
+          (item) =>
+            item.can_nombre === selectedChannel &&
+            new Date(item.dbr_fecha) >= startDate &&
+            new Date(item.dbr_fecha) <= endDate
+        )
         .map((item) => ({
           date: new Date(item.dbr_fecha),
           polyValue: parseFloat(item.cal_cota_pres_corr_poly),
         }));
-
+  
       updateChartData(filteredData);
     }
   };
+  
 
   const updateChartData = (data: { date: Date; polyValue: number }[]) => {
     if (data.length === 0) {
@@ -290,6 +312,19 @@ export default function Layout() {
                     : 'Seleccione un canal'}
                 </h3>
                 <div style={{ height: '200px', width: '100%' }}>
+                  <DatePicker
+                    selected={startDate}
+                    onChange={(date) => setStartDate(date || startDate)}
+                    maxDate={endDate} // Ensures start date doesn't go beyond the end date
+                    className="border border-gray-300 rounded-md px-2 py-1 text-sm"
+                  />
+                  <DatePicker
+                    selected={endDate}
+                    onChange={(date) => setEndDate(date || endDate)}
+                    minDate={startDate} // Ensures end date doesn't go before the start date
+                    className="border border-gray-300 rounded-md px-2 py-1 text-sm"
+                  />
+
                   <Line data={chartData} options={chartOptions} />
                 </div>
               </div>
@@ -305,13 +340,13 @@ export default function Layout() {
                   <option value="">Todos</option>
                   {Array.from(new Set(channels.map((channel) => channel.nod_nombre))).map((node) => (
                     <option key={node} value={node}>
-                      {node}
+                      Nodo {node}
                     </option>
                   ))}
                 </select>
               </div>
 
-              <div className="max-h-[560px] overflow-y-auto pr-2 custom-scrollbar">
+              <div className="max-h-[570px] overflow-y-auto pr-2 custom-scrollbar">
                 <ul className="space-y-2">
                   {filteredChannels.map((channel) => (
                     <li
