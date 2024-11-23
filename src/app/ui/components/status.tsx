@@ -19,7 +19,7 @@ export default function Status({
       className={clsx(
         'inline-flex items-center rounded-full px-2 py-1 text-xs font-semibold',
         {
-          'bg-gray-100 text-gray-500': !status,
+          'bg-gray-200 text-gray-500': !status,
           'bg-green-500 text-white': status,
         }
       )}>

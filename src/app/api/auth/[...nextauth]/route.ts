@@ -42,6 +42,13 @@ const handler = NextAuth({
           }
 
           const user = result.rows[0];
+
+          // Check if the user is active
+          if (!user.usu_estado) {
+            throw new Error("El usuario no está activo. Contacte al administrador.");
+          }
+
+          // Verify the password
           const isValid = await bcrypt.compare(password, user.usu_pass);
 
           if (!isValid) {

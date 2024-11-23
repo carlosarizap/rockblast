@@ -283,17 +283,18 @@ export default function Layout() {
   const setWaterDataForChart = (data = waterData) => {
     if (selectedChannel) {
       const filteredData = data.filter((item) => item.can_nombre === selectedChannel);
-      const slicedData = filteredData.slice(rangeValues[0], rangeValues[1] + 1);
-
-      if (slicedData.length > 0) {
+  
+      if (filteredData.length > 0) {
+        const slicedData = filteredData.slice(rangeValues[0], rangeValues[1] + 1);
+  
         const chartLabels = slicedData.map((item) => new Date(item.dbr_fecha).toLocaleDateString());
         const chartValues = slicedData.map((item) => parseFloat(item.cal_cota_pres_corr_poly));
-
+  
         const smoothedValues = applyMovingAverage(chartValues, 3);
         const minLevel = Math.min(...smoothedValues);
         const maxLevel = Math.max(...smoothedValues);
         setYAxisRange({ min: minLevel - 1, max: maxLevel + 1 });
-
+  
         setChartData({
           labels: chartLabels,
           datasets: [
@@ -309,10 +310,27 @@ export default function Layout() {
             },
           ],
         });
+      } else {
+        // Reset the chart data if there is no data for the selected channel
+        setChartData({
+          labels: [],
+          datasets: [
+            {
+              label: 'Cota Presión Corrección Polinómica',
+              data: [],
+              borderColor: '#00bcd4',
+              borderWidth: 5,
+              fill: false,
+              pointBackgroundColor: '#00bcd4',
+              pointRadius: 0,
+              tension: 0.5,
+            },
+          ],
+        });
       }
     }
   };
-
+  
 
 
 
