@@ -13,20 +13,20 @@ export const getAllAlarms = async (): Promise<Alarm[]> => {
     try {
         const result = await client.query(`
                 SELECT 
-    a.ale_id, 
-    a.cal_id, 
-    a.usu_id_rut, 
-    u.usu_nombre AS usu_nombre, -- Include user name from tb_usuario
-    u.usu_apellido AS usu_apellido, -- Optionally include user last name
-    a.tal_id, 
-    t.tal_nombre AS tipo_alerta, -- Join with tb_tipo_alerta to get the alert type name
-    a.ale_description, 
-    a.ale_fecha, 
-    a.ale_revision 
-FROM tb_alerta a
-LEFT JOIN tb_tipo_alerta t ON a.tal_id = t.tal_id -- Join with tb_tipo_alerta for alert type
-LEFT JOIN tb_usuario u ON a.usu_id_rut = u.usu_id_rut -- Join with tb_usuario to get user details
-ORDER BY a.ale_fecha DESC; -- Order results by ale_revision in descending order
+                    a.ale_id, 
+                    a.cal_id, 
+                    a.usu_id_rut, 
+                    u.usu_nombre AS usu_nombre, -- Include user name from tb_usuario
+                    u.usu_apellido AS usu_apellido, -- Optionally include user last name
+                    a.tal_id, 
+                    t.tal_nombre AS tipo_alerta, -- Join with tb_tipo_alerta to get the alert type name
+                    a.ale_description, 
+                    a.ale_fecha, 
+                    a.ale_revision 
+                FROM tb_alerta a
+                LEFT JOIN tb_tipo_alerta t ON a.tal_id = t.tal_id -- Join with tb_tipo_alerta for alert type
+                LEFT JOIN tb_usuario u ON a.usu_id_rut = u.usu_id_rut -- Join with tb_usuario to get user details
+                ORDER BY a.ale_fecha DESC; -- Order results by ale_revision in descending order
 
         `);
         return result.rows;

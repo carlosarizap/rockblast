@@ -6,6 +6,9 @@ import { socket } from '../socket';
 import SideNav from '@/app/ui/dashboard/sidenav';
 import { Map } from '../ui/map';
 import { Line } from 'react-chartjs-2';
+import 'rc-slider/assets/index.css';
+import Slider from 'rc-slider';
+import moment from 'moment';
 import {
   Chart as ChartJS,
   LineElement,
@@ -117,10 +120,14 @@ export default function Layout() {
   const [selectedNodeName, setSelectedNodeName] = useState<string | null>(null);
   const [selectedNode, setSelectedNode] = useState<string | null>(null);
   const [isConnected, setIsConnected] = useState(false);
-  const [startDate, setStartDate] = useState<Date>(new Date()); 
+  const [startDate, setStartDate] = useState<Date>(new Date());
   const [endDate, setEndDate] = useState<Date>(new Date());
-
+  const [nodeStatusData, setNodeStatusData] = useState<any[]>([]);
   const [transport, setTransport] = useState<string>('N/A');
+  const [rangeValues, setRangeValues] = useState<number[]>([0, 1]); // Set default range
+  const [minDate, setMinDate] = useState<Date | null>(null);
+  const [maxDate, setMaxDate] = useState<Date | null>(null);
+
   const [chartData, setChartData] = useState({
     labels: [] as string[],
     datasets: [] as {
@@ -137,20 +144,50 @@ export default function Layout() {
   const [yAxisRange, setYAxisRange] = useState({ min: 2784, max: 2786 });
 
   useEffect(() => {
-    setWaterDataForChart();
-  }, [selectedChannel, waterData]);
+    if (selectedChannel && startDate && endDate) {
+      setWaterDataForChart();
+    }
+  }, [selectedChannel, startDate, endDate, waterData]);
 
   useEffect(() => {
-    // Obtener la fecha más reciente de los datos al cargar
-    if (waterData.length > 0) {
-      const latestDate = new Date(
-        Math.max(...waterData.map((item) => new Date(item.dbr_fecha).getTime()))
-      );
-      setEndDate(latestDate); // Fecha final
-      setStartDate(new Date(latestDate.setDate(latestDate.getDate() - 7))); // Últimos 7 días desde la fecha más reciente
+    if (selectedChannel && startDate && endDate) {
+      setWaterDataForChart();
     }
-  }, [waterData]);
-  
+  }, [startDate, endDate]);
+
+  useEffect(() => {
+    if (selectedChannel && waterData.length > 0) {
+      // Perform data filtering and date calculations as before
+      const filteredData = waterData.filter((item) => item.can_nombre === selectedChannel);
+
+      if (filteredData.length > 0) {
+        // Calculate and set min, max, start, and end dates as before
+        const minDateValue = new Date(filteredData[0].dbr_fecha);
+        const maxDateValue = new Date(filteredData[filteredData.length - 1].dbr_fecha);
+
+        setMinDate(minDateValue);
+        setMaxDate(maxDateValue);
+
+        const maxDateTimestamp = maxDateValue.getTime();
+        const oneWeekAgoTimestamp = maxDateTimestamp - 7 * 24 * 60 * 60 * 1000;
+
+        let startIndex = filteredData.findIndex((item) => new Date(item.dbr_fecha).getTime() >= oneWeekAgoTimestamp);
+        if (startIndex === -1) {
+          startIndex = 0;
+        }
+
+        // Set start and end dates
+        setStartDate(new Date(filteredData[startIndex].dbr_fecha));
+        setEndDate(new Date(filteredData[filteredData.length - 1].dbr_fecha));
+
+        // Set the correct slider range values
+        setRangeValues([startIndex, filteredData.length - 1]);
+
+        // Call `setWaterDataForChart` with the updated data
+        setWaterDataForChart(filteredData);
+      }
+    }
+  }, [selectedChannel, waterData]);
 
   // Fetch initial data and setup socket listeners
   useEffect(() => {
@@ -163,7 +200,11 @@ export default function Layout() {
           fetch('http://localhost:5000/api/v1/canal/status')
             .then((res) => res.json())
             .then((data) => data.response),
+
         ]);
+
+
+
         setWaterData(initialWaterData);
         setChannels(initialChannelData);
       } catch (error) {
@@ -187,13 +228,21 @@ export default function Layout() {
         setChannels(data.statusCanal);
       });
 
+      socket.on('statusNodoData', (data) => {
+        console.log('Nodo status data received:', data);
+        setNodeStatusData(data.statusNodo); // Update node status data
+      });
+
       socket.on('connect', () => setIsConnected(true));
       socket.on('disconnect', () => setIsConnected(false));
-      socket.io.engine.on('upgrade', (transport) => setTransport(transport.name));
+      socket.io.engine.on('upgrade', (transport) =>
+        setTransport(transport.name)
+      );
 
       return () => {
         socket.off('levelWaterData');
         socket.off('statusCanalData');
+        socket.off('statusNodoData');
         socket.off('connect');
         socket.off('disconnect');
         socket.io.engine.off('upgrade');
@@ -209,6 +258,18 @@ export default function Layout() {
   }, [waterData, selectedChannel]);
 
 
+  useEffect(() => {
+    setWaterDataForChart();
+  }, [waterData, selectedChannel]);
+
+  const handleSliderChange = (value: number | number[]) => {
+    if (Array.isArray(value)) {
+      setRangeValues(value);
+      setWaterDataForChart();
+    }
+  };
+
+
 
   // Filter channels when selectedNode changes
   useEffect(() => {
@@ -221,23 +282,40 @@ export default function Layout() {
 
   const setWaterDataForChart = (data = waterData) => {
     if (selectedChannel) {
-      // Filtrar datos por canal y rango de fechas
-      const filteredData = data
-        .filter(
-          (item) =>
-            item.can_nombre === selectedChannel &&
-            new Date(item.dbr_fecha) >= startDate &&
-            new Date(item.dbr_fecha) <= endDate
-        )
-        .map((item) => ({
-          date: new Date(item.dbr_fecha),
-          polyValue: parseFloat(item.cal_cota_pres_corr_poly),
-        }));
-  
-      updateChartData(filteredData);
+      const filteredData = data.filter((item) => item.can_nombre === selectedChannel);
+      const slicedData = filteredData.slice(rangeValues[0], rangeValues[1] + 1);
+
+      if (slicedData.length > 0) {
+        const chartLabels = slicedData.map((item) => new Date(item.dbr_fecha).toLocaleDateString());
+        const chartValues = slicedData.map((item) => parseFloat(item.cal_cota_pres_corr_poly));
+
+        const smoothedValues = applyMovingAverage(chartValues, 3);
+        const minLevel = Math.min(...smoothedValues);
+        const maxLevel = Math.max(...smoothedValues);
+        setYAxisRange({ min: minLevel - 1, max: maxLevel + 1 });
+
+        setChartData({
+          labels: chartLabels,
+          datasets: [
+            {
+              label: 'Cota Presión Corrección Polinómica',
+              data: smoothedValues,
+              borderColor: '#00bcd4',
+              borderWidth: 5,
+              fill: false,
+              pointBackgroundColor: '#00bcd4',
+              pointRadius: 0,
+              tension: 0.5,
+            },
+          ],
+        });
+      }
     }
   };
-  
+
+
+
+
 
   const updateChartData = (data: { date: Date; polyValue: number }[]) => {
     if (data.length === 0) {
@@ -284,17 +362,69 @@ export default function Layout() {
   const chartOptions: ChartOptions<'line'> = {
     responsive: true,
     maintainAspectRatio: false,
-    plugins: { legend: { display: false }, tooltip: { enabled: true } },
+    plugins: {
+      legend: {
+        display: false,
+      },
+      tooltip: {
+        enabled: true,
+        titleFont: {
+          family: "'Poppins', sans-serif",
+          size: 14,
+          weight: 600, // Corrected to a number
+        },
+        bodyFont: {
+          family: "'Poppins', sans-serif",
+          size: 12,
+          weight: 400, // Corrected to a number
+        },
+      },
+    },
     scales: {
-      x: { title: { display: true, text: 'Días' }, ticks: { maxTicksLimit: 5, autoSkip: true } },
-      y: { min: yAxisRange.min, max: yAxisRange.max, title: { display: true, text: 'Niveles' } },
+      x: {
+        title: {
+          display: true,
+          text: 'Días',
+          font: {
+            family: "'Poppins', sans-serif",
+            size: 16,
+            weight: 500, // Corrected to a number
+          },
+        },
+        ticks: {
+          font: {
+            family: "'Poppins', sans-serif",
+            size: 12,
+          },
+          maxTicksLimit: 5,
+          autoSkip: true,
+        },
+      },
+      y: {
+        min: yAxisRange.min,
+        max: yAxisRange.max,
+        title: {
+          display: true,
+          text: 'Nivel',
+          font: {
+            family: "'Poppins', sans-serif",
+            size: 16,
+            weight: 500, // Corrected to a number
+          },
+        },
+        ticks: {
+          font: {
+            family: "'Poppins', sans-serif",
+            size: 12,
+          },
+        },
+      },
     },
   };
 
+
   return (
     <div className="flex h-screen relative">
-
-
       <div className="w-72 flex-none z-10 bg-white">
         <SideNav />
       </div>
@@ -305,29 +435,58 @@ export default function Layout() {
               <div className="rounded-2xl flex-[1.5] w-full shadow-md">
                 <Map />
               </div>
-              <div className="rounded-2xl flex-[1] bg-white p-4 shadow-md">
-                <h3 className="text-lg font-semibold mb-4 text-custom-blue">
-                  {selectedChannel && selectedNodeName
-                    ? `Nodo: ${selectedNodeName} - Canal: ${selectedChannel}`
-                    : 'Seleccione un canal'}
-                </h3>
-                <div style={{ height: '200px', width: '100%' }}>
-                  <DatePicker
-                    selected={startDate}
-                    onChange={(date) => setStartDate(date || startDate)}
-                    maxDate={endDate} // Ensures start date doesn't go beyond the end date
-                    className="border border-gray-300 rounded-md px-2 py-1 text-sm"
-                  />
-                  <DatePicker
-                    selected={endDate}
-                    onChange={(date) => setEndDate(date || endDate)}
-                    minDate={startDate} // Ensures end date doesn't go before the start date
-                    className="border border-gray-300 rounded-md px-2 py-1 text-sm"
-                  />
+              <div className="rounded-2xl flex-[1] bg-white p-4 shadow-md relative">
+                <div className=''>
+                  <div className="absolute top-4 right-4 bg-gray-100 rounded-xl py-2 px-4" style={{ width: '55%' }}>
+                    {/* Container for the date indicators */}
+                    <div className="flex justify-between mb-1 text-xs text-gray-600">
+                      {(() => {
+                        // Filter the data for the selected channel
+                        const filteredData = waterData.filter(item => item.can_nombre === selectedChannel);
+                        // Ensure rangeValues are within bounds and filteredData is not empty
+                        const startDate = filteredData[rangeValues[0]]
+                          ? moment(filteredData[rangeValues[0]].dbr_fecha).format('YYYY-MM-DD')
+                          : 'N/A';
+                        const endDate = filteredData[rangeValues[1]]
+                          ? moment(filteredData[rangeValues[1]].dbr_fecha).format('YYYY-MM-DD')
+                          : 'N/A';
 
+                        return (
+                          <>
+                            <span>{startDate}</span>
+                            <span>{endDate}</span>
+                          </>
+                        );
+                      })()}
+                    </div>
+                    {/* The slider component */}
+                    <Slider
+                      range
+                      min={0}
+                      max={waterData.filter((item) => item.can_nombre === selectedChannel).length - 1}
+                      value={rangeValues}
+                      onChange={handleSliderChange}
+                      trackStyle={[{ backgroundColor: '#00bcd4' }]} // Changed to a blue color for better contrast
+                      handleStyle={[
+                        { borderColor: '#00bcd4', backgroundColor: '#00bcd4' }, // Handle color adjusted to be consistent and visible
+                        { borderColor: '#00bcd4', backgroundColor: '#00bcd4' },
+                      ]}
+                      railStyle={{ backgroundColor: '#b0bec5' }}
+                    />
+                  </div>
+
+                  <h3 className="text-lg font-semibold mb-4 text-custom-blue">
+                    {selectedChannel && selectedNodeName
+                      ? `Nodo: ${selectedNodeName} - Canal: ${selectedChannel}`
+                      : 'Seleccione un canal'}
+                  </h3>
+                </div>
+
+                <div className='mt-5' style={{ height: '200px', width: '100%' }}>
                   <Line data={chartData} options={chartOptions} />
                 </div>
               </div>
+
             </div>
             <div className="bg-white rounded-2xl p-2 w-[21%] shadow-md">
               <div className="flex justify-between items-center mb-2">
@@ -398,9 +557,6 @@ export default function Layout() {
                 </ul>
               </div>
             </div>
-
-
-
           </div>
         </div>
       </div>
