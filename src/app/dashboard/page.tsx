@@ -455,7 +455,7 @@ export default function Layout() {
               </div>
               <div className="rounded-2xl flex-[1] bg-white p-4 shadow-md relative">
                 <div className=''>
-                  <div className="absolute top-4 right-4 bg-gray-100 rounded-xl py-2 px-4" style={{ width: '55%' }}>
+                  <div className="absolute top-3 right-4 bg-gray-100 rounded-xl py-2 px-4" style={{ width: '55%' }}>
                     {/* Container for the date indicators */}
                     <div className="flex justify-between mb-1 text-xs text-gray-600">
                       {(() => {
