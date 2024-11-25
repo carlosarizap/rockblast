@@ -62,6 +62,15 @@ const getStatusIcon = (status: string) => {
           title="Alto"
         />
       );
+    case 'critico':
+      return (
+        <FontAwesomeIcon
+          icon={faCircleArrowUp}
+          className="text-red-500"
+          size="lg"
+          title="Critico"
+        />
+      );
     case 'problema':
       return (
         <FontAwesomeIcon
@@ -127,6 +136,8 @@ export default function Layout() {
   const [rangeValues, setRangeValues] = useState<number[]>([0, 1]); // Set default range
   const [minDate, setMinDate] = useState<Date | null>(null);
   const [maxDate, setMaxDate] = useState<Date | null>(null);
+  const [initialNodeData, setInitialNodeData] = useState<any[]>([]);
+  const [clickedNode, setClickedNode] = useState<string | null>(null); // For channel clicks
 
   const [chartData, setChartData] = useState({
     labels: [] as string[],
@@ -193,18 +204,20 @@ export default function Layout() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [initialWaterData, initialChannelData] = await Promise.all([
+        const [initialWaterData, initialChannelData, initialNodeData] = await Promise.all([
           fetch('http://localhost:5000/api/v1/canal/levelWater')
             .then((res) => res.json())
             .then((data) => data.response),
           fetch('http://localhost:5000/api/v1/canal/status')
             .then((res) => res.json())
             .then((data) => data.response),
-
+          fetch('http://localhost:5000/api/v1/nodo')
+            .then((res) => res.json())
+            .then((data) => data.response),
         ]);
 
-
-
+        console.log(initialNodeData)
+        setInitialNodeData(initialNodeData);
         setWaterData(initialWaterData);
         setChannels(initialChannelData);
       } catch (error) {
@@ -283,18 +296,41 @@ export default function Layout() {
   const setWaterDataForChart = (data = waterData) => {
     if (selectedChannel) {
       const filteredData = data.filter((item) => item.can_nombre === selectedChannel);
-  
+
       if (filteredData.length > 0) {
         const slicedData = filteredData.slice(rangeValues[0], rangeValues[1] + 1);
-  
+
         const chartLabels = slicedData.map((item) => new Date(item.dbr_fecha).toLocaleDateString());
         const chartValues = slicedData.map((item) => parseFloat(item.cal_cota_pres_corr_poly));
-  
+
         const smoothedValues = applyMovingAverage(chartValues, 3);
         const minLevel = Math.min(...smoothedValues);
         const maxLevel = Math.max(...smoothedValues);
-        setYAxisRange({ min: minLevel - 1, max: maxLevel + 1 });
-  
+
+        // Find the cota_critica for the selected node
+        const node = initialNodeData.find((n) => n.nod_nombre === clickedNode);
+        const cotaCritica = node ? node.cota_critica : null;
+
+        // Adjust the yAxis range dynamically
+        const padding = 1; // Add some padding to ensure better visibility
+        let newYAxisMin = minLevel - padding;
+        let newYAxisMax = maxLevel + padding;
+
+        // Ensure cota_critica is visible if it exists
+        if (cotaCritica !== null) {
+          newYAxisMin = Math.min(newYAxisMin, cotaCritica - padding);
+          newYAxisMax = Math.max(newYAxisMax, cotaCritica + padding);
+        }
+
+        // Limit the range expansion to prevent overly large vertical scales
+        const maxRange = maxLevel - minLevel + 50; // Adjust this value for your dataset
+        if (newYAxisMax - newYAxisMin > maxRange) {
+          newYAxisMin = minLevel - padding;
+          newYAxisMax = maxLevel + padding;
+        }
+
+        setYAxisRange({ min: newYAxisMin, max: newYAxisMax });
+
         setChartData({
           labels: chartLabels,
           datasets: [
@@ -308,10 +344,23 @@ export default function Layout() {
               pointRadius: 0,
               tension: 0.5,
             },
+            ...(cotaCritica !== null
+              ? [
+                {
+                  label: 'Cota Crítica',
+                  data: new Array(smoothedValues.length).fill(cotaCritica),
+                  borderColor: 'red',
+                  borderWidth: 2,
+                  fill: false,
+                  pointBackgroundColor: 'red',
+                  pointRadius: 0,
+                  tension: 0,
+                },
+              ]
+              : []),
           ],
         });
       } else {
-        // Reset the chart data if there is no data for the selected channel
         setChartData({
           labels: [],
           datasets: [
@@ -330,7 +379,10 @@ export default function Layout() {
       }
     }
   };
-  
+
+
+
+
 
 
 
@@ -419,8 +471,8 @@ export default function Layout() {
         },
       },
       y: {
-        min: yAxisRange.min,
-        max: yAxisRange.max,
+        min: yAxisRange.min, // Dynamically adjust the min
+        max: yAxisRange.max, // Dynamically adjust the max
         title: {
           display: true,
           text: 'Nivel',
@@ -439,6 +491,7 @@ export default function Layout() {
       },
     },
   };
+
 
 
   return (
@@ -533,6 +586,7 @@ export default function Layout() {
                       onClick={() => {
                         setSelectedChannel(channel.can_nombre);
                         setSelectedNodeName(channel.nod_nombre);
+                        setClickedNode(channel.nod_nombre);
                       }}
                     >
                       {/* Custom Blue Circle Icon */}
