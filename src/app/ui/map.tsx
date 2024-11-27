@@ -33,8 +33,8 @@ export function Map({ nodes }: MapProps) {
             const map = new mapboxgl.Map({
                 container: mapRef.current,
                 style: 'mapbox://styles/mapbox/satellite-v9',
-                center: [-69.08341, -24.254059],
-                zoom: 14,
+                center: [-69.07395, -24.270267],
+                zoom: 13,
                 pitch: 60,
                 bearing: 270,
                 antialias: true,

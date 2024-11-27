@@ -32,6 +32,36 @@ import {
   faThermometer,
   faCircle,
 } from '@fortawesome/free-solid-svg-icons';
+import {
+  faCircleExclamation,
+  faExclamationTriangle,
+  faDroplet,
+} from '@fortawesome/free-solid-svg-icons';
+
+const getAlertTypeStyle = (alertType: string) => {
+  switch (alertType) {
+    case 'Cota de Agua':
+      return {
+        color: 'bg-blue-100 text-blue-800',
+        icon: faDroplet,
+      };
+    case 'Tendencia Variación':
+      return {
+        color: 'bg-yellow-100 text-yellow-800',
+        icon: faExclamationTriangle,
+      };
+    case 'Tendencia Cambio Abrupto':
+      return {
+        color: 'bg-red-100 text-red-800',
+        icon: faCircleExclamation,
+      };
+    default:
+      return {
+        color: 'bg-gray-100 text-gray-800',
+        icon: faExclamationTriangle,
+      };
+  }
+};
 
 const getStatusIcon = (status: string) => {
   switch (status.toLowerCase()) {
@@ -138,6 +168,8 @@ export default function Layout() {
   const [maxDate, setMaxDate] = useState<Date | null>(null);
   const [initialNodeData, setInitialNodeData] = useState<any[]>([]);
   const [clickedNode, setClickedNode] = useState<string | null>(null); // For channel clicks
+  const [alerts, setAlerts] = useState<any[]>([]); // State to store alerts
+  const [isModalVisible, setIsModalVisible] = useState(false);
 
   const [chartData, setChartData] = useState({
     labels: [] as string[],
@@ -165,6 +197,7 @@ export default function Layout() {
       setWaterDataForChart();
     }
   }, [startDate, endDate]);
+
 
   useEffect(() => {
     if (selectedChannel && waterData.length > 0) {
@@ -245,6 +278,15 @@ export default function Layout() {
         setNodeStatusData(data.statusNodo); // Update node status data
       });
 
+      socket.on('alerts', (data) => {
+        console.log('Alarm status data received:', data);
+        setAlerts(data.alerts); // Update the alerts state
+        console.log('Alarm status data received2 :', data.alerts);
+
+        console.log('alerts', alerts)
+        setIsModalVisible(true); // Show the modal
+      });
+
       socket.on('connect', () => setIsConnected(true));
       socket.on('disconnect', () => setIsConnected(false));
       socket.io.engine.on('upgrade', (transport) =>
@@ -274,13 +316,13 @@ export default function Layout() {
     setWaterDataForChart();
   }, [waterData, selectedChannel]);
 
+
   const handleSliderChange = (value: number | number[]) => {
     if (Array.isArray(value)) {
       setRangeValues(value);
       setWaterDataForChart();
     }
   };
-
 
 
   // Filter channels when selectedNode changes
@@ -295,51 +337,99 @@ export default function Layout() {
   const setWaterDataForChart = (data = waterData) => {
     if (selectedChannel) {
       const filteredData = data.filter((item) => item.can_nombre === selectedChannel);
-
-      if (filteredData.length > 0) {
-        const slicedData = filteredData.slice(rangeValues[0], rangeValues[1] + 1);
-
+  
+      // Extract the last historical point
+      const lastHistoricalPoint = filteredData.length > 0
+        ? {
+            dbr_fecha: filteredData[filteredData.length - 1].dbr_fecha,
+            cal_cota_pres_corr_poly: parseFloat(filteredData[filteredData.length - 1].cal_cota_pres_corr_poly),
+            isPredicted: false, // Mark as a historical point
+          }
+        : null;
+  
+      // Prepare predicted data
+      const predictedData = predictionData.map((item) => ({
+        dbr_fecha: item.Fecha,
+        cal_cota_pres_corr_poly: parseFloat(item.Prediccion),
+        isPredicted: true,
+      }));
+  
+      // Add mock predicted value (last historical point) to connect datasets
+      if (lastHistoricalPoint) {
+        predictedData.unshift(lastHistoricalPoint);
+      }
+  
+      // Combine historical and predicted data
+      const combinedData = [...filteredData, ...predictedData];
+  
+      if (combinedData.length > 0) {
+        // Slice the combined data based on rangeValues
+        const slicedData = combinedData.slice(rangeValues[0], rangeValues[1] + 1);
+  
+        // Split sliced data into historical and predicted
+        const historicalData = slicedData.filter((item) => !('isPredicted' in item));
+        const predictedDataRange = slicedData.filter((item) => 'isPredicted' in item);
+  
+        // Extract labels and values
         const chartLabels = slicedData.map((item) => new Date(item.dbr_fecha).toLocaleDateString());
-        const chartValues = slicedData.map((item) => parseFloat(item.cal_cota_pres_corr_poly));
-
+        const chartValues = historicalData.map((item) =>
+          parseFloat(item.cal_cota_pres_corr_poly.toString())
+        );
         const smoothedValues = applyMovingAverage(chartValues, 3);
-        const minLevel = Math.min(...smoothedValues);
-        const maxLevel = Math.max(...smoothedValues);
-
-        // Find the cota_critica for the selected node
+  
+        // Predicted values
+        const predictedValues = predictedDataRange.map((item) =>
+          parseFloat(item.cal_cota_pres_corr_poly.toString())
+        );
+  
+        // Calculate yAxis range
+        const minSmoothed = smoothedValues.length > 0 ? Math.min(...smoothedValues) : Infinity;
+        const maxSmoothed = smoothedValues.length > 0 ? Math.max(...smoothedValues) : -Infinity;
+        const minPredicted = predictedValues.length > 0 ? Math.min(...predictedValues) : Infinity;
+        const maxPredicted = predictedValues.length > 0 ? Math.max(...predictedValues) : -Infinity;
+  
+        const minLevel = Math.min(minSmoothed, minPredicted);
+        const maxLevel = Math.max(maxSmoothed, maxPredicted);
+  
+        // Get Cota Crítica for the selected node
         const node = initialNodeData.find((n) => n.nod_nombre === clickedNode);
         const cotaCritica = node ? node.cota_critica : null;
-
-        // Adjust the yAxis range dynamically
-        const padding = 1; // Add some padding to ensure better visibility
+  
+        const padding = 5;
         let newYAxisMin = minLevel - padding;
         let newYAxisMax = maxLevel + padding;
-
-        // Ensure cota_critica is visible if it exists
+  
+        // Ensure cota_critica is included in the yAxis range
         if (cotaCritica !== null) {
           newYAxisMin = Math.min(newYAxisMin, cotaCritica - padding);
           newYAxisMax = Math.max(newYAxisMax, cotaCritica + padding);
         }
-
-        // Limit the range expansion to prevent overly large vertical scales
-        const maxRange = maxLevel - minLevel + 50; // Adjust this value for your dataset
+  
+        // Apply max range limit to prevent overly large Y-axis scaling
+        const maxRange = 100; // Define the maximum allowable range
         if (newYAxisMax - newYAxisMin > maxRange) {
-          newYAxisMin = minLevel - padding;
-          newYAxisMax = maxLevel + padding;
+          const center = (newYAxisMin + newYAxisMax) / 2;
+          newYAxisMin = center - maxRange / 2;
+          newYAxisMax = center + maxRange / 2;
         }
-        const predictedLabels = predictionData.map((item) => new Date(item.Fecha).toLocaleDateString());
-        const predictedValues = predictionData.map((item) => item.Prediccion);
-
+  
+        // Update the Y-axis range
         setYAxisRange({ min: newYAxisMin, max: newYAxisMax });
-
+  
+        // Extend Cota Crítica line
+        const cotaCriticaData = cotaCritica !== null
+          ? new Array(chartLabels.length).fill(cotaCritica)
+          : [];
+  
+        // Set the chart data
         setChartData({
-          labels: [...chartLabels, ...predictedLabels],
+          labels: chartLabels,
           datasets: [
             {
               label: 'Cota Presión Corrección Polinómica',
               data: smoothedValues,
               borderColor: '#00bcd4',
-              borderWidth: 5,
+              borderWidth: 3,
               fill: false,
               pointBackgroundColor: '#00bcd4',
               pointRadius: 0,
@@ -347,54 +437,49 @@ export default function Layout() {
             },
             ...(cotaCritica !== null
               ? [
-                {
-                  label: 'Cota Crítica',
-                  data: new Array(smoothedValues.length).fill(cotaCritica),
-                  borderColor: 'red',
-                  borderWidth: 2,
-                  fill: false,
-                  pointBackgroundColor: 'red',
-                  pointRadius: 0,
-                  tension: 0,
-                },
-              ]
+                  {
+                    label: 'Cota Crítica',
+                    data: cotaCriticaData, // Extend the red line across the range
+                    borderColor: 'red',
+                    borderWidth: 2,
+                    fill: false,
+                    pointBackgroundColor: 'red',
+                    pointRadius: 0,
+                    tension: 0,
+                  },
+                ]
               : []),
-            ...(predictionData.length > 0
+            ...(predictedValues.length > 0
               ? [
-                {
-                  label: 'Predicción',
-                  data: new Array(chartValues.length).fill(null).concat(predictedValues),
-                  borderColor: '#e1ad01',
-                  borderWidth: 2,
-                  fill: false,
-                  pointBackgroundColor: '#e1ad01',
-                  pointRadius: 0,
-                  tension: 0.5,
-                },
-              ]
+                  {
+                    label: 'Predicción',
+                    data: smoothedValues.concat(predictedValues), // Connect predictions to historical data
+                    borderColor: '#e1ad01',
+                    borderWidth: 3,
+                    fill: false,
+                    pointBackgroundColor: '#e1ad01',
+                    pointRadius: 0,
+                    tension: 0.5,
+                  },
+                ]
               : []),
           ],
         });
-
       } else {
+        // Reset the chart data if no data is available
         setChartData({
           labels: [],
-          datasets: [
-            {
-              label: 'Cota Presión Corrección Polinómica',
-              data: [],
-              borderColor: '#00bcd4',
-              borderWidth: 5,
-              fill: false,
-              pointBackgroundColor: '#00bcd4',
-              pointRadius: 0,
-              tension: 0.5,
-            },
-          ],
+          datasets: [],
         });
       }
     }
   };
+  
+
+
+
+
+
 
 
   const [predictionData, setPredictionData] = useState<any[]>([]);
@@ -420,8 +505,6 @@ export default function Layout() {
 
           const data = await response.json();
           setPredictionData(data);
-
-          console.log(data)
         } catch (error) {
           console.error('Error fetching prediction data:', error);
         }
@@ -458,7 +541,7 @@ export default function Layout() {
     const smoothedValues = applyMovingAverage(data.map((d) => d.polyValue), 3);
     const minLevel = Math.min(...smoothedValues);
     const maxLevel = Math.max(...smoothedValues);
-    setYAxisRange({ min: minLevel - 2, max: maxLevel + 2 });
+    setYAxisRange({ min: minLevel - 5, max: maxLevel + 5 });
 
     setChartData({
       labels: data.map((d) => d.date.toLocaleDateString()),
@@ -552,7 +635,7 @@ export default function Layout() {
           <div className="flex gap-4 flex-grow">
             <div className="gap-4 flex-grow flex flex-col">
               <div className="rounded-2xl flex-[1.5] w-full shadow-md">
-                <Map nodes={initialNodeData} />
+                <Map nodes={nodeStatusData.length > 0 ? nodeStatusData : initialNodeData} />
               </div>
               <div className="rounded-2xl flex-[1] bg-white p-4 shadow-md relative">
                 <div className=''>
@@ -560,15 +643,22 @@ export default function Layout() {
                     {/* Container for the date indicators */}
                     <div className="flex justify-between mb-1 text-xs text-gray-600">
                       {(() => {
-                        // Filter the data for the selected channel
-                        const filteredData = waterData.filter(item => item.can_nombre === selectedChannel);
-                        // Ensure rangeValues are within bounds and filteredData is not empty
-                        const startDate = filteredData[rangeValues[0]]
-                          ? moment(filteredData[rangeValues[0]].dbr_fecha).format('YYYY-MM-DD')
-                          : 'N/A';
-                        const endDate = filteredData[rangeValues[1]]
-                          ? moment(filteredData[rangeValues[1]].dbr_fecha).format('YYYY-MM-DD')
-                          : 'N/A';
+                        // Combine historical and predicted data for date calculation
+                        const combinedData = [
+                          ...waterData.filter((item) => item.can_nombre === selectedChannel),
+                          ...predictionData.map((item) => ({ dbr_fecha: item.Fecha })),
+                        ];
+
+                        // Ensure rangeValues are within bounds and combinedData is not empty
+                        const startDate =
+                          combinedData[rangeValues[0]]
+                            ? moment(combinedData[rangeValues[0]].dbr_fecha).format('YYYY-MM-DD')
+                            : 'N/A';
+
+                        const endDate =
+                          combinedData[rangeValues[1]]
+                            ? moment(combinedData[rangeValues[1]].dbr_fecha).format('YYYY-MM-DD')
+                            : 'N/A';
 
                         return (
                           <>
@@ -578,20 +668,25 @@ export default function Layout() {
                         );
                       })()}
                     </div>
+
                     {/* The slider component */}
                     <Slider
                       range
                       min={0}
-                      max={waterData.filter((item) => item.can_nombre === selectedChannel).length - 1}
+                      max={
+                        waterData.filter((item) => item.can_nombre === selectedChannel).length +
+                        predictionData.length - 1
+                      }
                       value={rangeValues}
                       onChange={handleSliderChange}
-                      trackStyle={[{ backgroundColor: '#00bcd4' }]} // Changed to a blue color for better contrast
+                      trackStyle={[{ backgroundColor: '#00bcd4' }]}
                       handleStyle={[
-                        { borderColor: '#00bcd4', backgroundColor: '#00bcd4' }, // Handle color adjusted to be consistent and visible
+                        { borderColor: '#00bcd4', backgroundColor: '#00bcd4' },
                         { borderColor: '#00bcd4', backgroundColor: '#00bcd4' },
                       ]}
                       railStyle={{ backgroundColor: '#b0bec5' }}
                     />
+
                   </div>
 
                   <h3 className="text-lg font-semibold mb-4 text-custom-blue">
@@ -618,7 +713,7 @@ export default function Layout() {
                   <option value="">Todos</option>
                   {Array.from(new Set(channels.map((channel) => channel.nod_nombre))).map((node) => (
                     <option key={node} value={node}>
-                      Nodo {node}
+                      Pozo {node}
                     </option>
                   ))}
                 </select>
@@ -679,6 +774,53 @@ export default function Layout() {
             </div>
           </div>
         </div>
+        {isModalVisible && (
+          <div className="fixed inset-0 flex items-center justify-center bg-gray-800 bg-opacity-50 z-50">
+            <div className="bg-white w-11/12 max-w-2xl rounded-lg shadow-lg p-6">
+              <h4 className="text-xl font-bold mb-4 text-gray-800">
+                Notificación de Alerta
+              </h4>
+              <ul className="space-y-4">
+                {/* Check if alerts is an array and has data */}
+                {Array.isArray(alerts) && alerts.length > 0 ? (
+                  alerts.map((alert, index) => {
+                    const { color, icon } = getAlertTypeStyle(alert.tipo_alerta);
+                    return (
+                      <li
+                        key={index}
+                        className={`flex items-center gap-4 p-4 rounded-md shadow-md ${color}`}
+                      >
+                        <FontAwesomeIcon icon={icon} className="text-lg" />
+                        <div>
+                          <p className="font-semibold text-sm">
+                            {alert.tipo_alerta}
+                          </p>
+                          <p className="text-xs text-gray-600">
+                            {`Canal: ${alert.can_nombre}, Nodo: ${alert.nod_nombre}`}
+                          </p>
+                          <p className="text-xs text-gray-600">
+                            Fecha: {new Date(alert.dbr_fecha).toLocaleString()}
+                          </p>
+                        </div>
+                      </li>
+                    );
+                  })
+                ) : (
+                  <p className="text-gray-500 text-sm">No hay alertas disponibles.</p>
+                )}
+              </ul>
+              <div className="mt-4 flex justify-end">
+                <button
+                  onClick={() => setIsModalVisible(false)}
+                  className="px-4 py-2 bg-blue-600 text-white rounded-lg shadow hover:bg-blue-700"
+                >
+                  Cerrar
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
       </div>
     </div>
   );
