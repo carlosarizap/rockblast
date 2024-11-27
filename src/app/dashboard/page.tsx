@@ -216,7 +216,6 @@ export default function Layout() {
             .then((data) => data.response),
         ]);
 
-        console.log(initialNodeData)
         setInitialNodeData(initialNodeData);
         setWaterData(initialWaterData);
         setChannels(initialChannelData);
@@ -328,11 +327,13 @@ export default function Layout() {
           newYAxisMin = minLevel - padding;
           newYAxisMax = maxLevel + padding;
         }
+        const predictedLabels = predictionData.map((item) => new Date(item.Fecha).toLocaleDateString());
+        const predictedValues = predictionData.map((item) => item.Prediccion);
 
         setYAxisRange({ min: newYAxisMin, max: newYAxisMax });
 
         setChartData({
-          labels: chartLabels,
+          labels: [...chartLabels, ...predictedLabels],
           datasets: [
             {
               label: 'Cota Presión Corrección Polinómica',
@@ -358,8 +359,23 @@ export default function Layout() {
                 },
               ]
               : []),
+            ...(predictionData.length > 0
+              ? [
+                {
+                  label: 'Predicción',
+                  data: new Array(chartValues.length).fill(null).concat(predictedValues),
+                  borderColor: '#e1ad01',
+                  borderWidth: 2,
+                  fill: false,
+                  pointBackgroundColor: '#e1ad01',
+                  pointRadius: 0,
+                  tension: 0.5,
+                },
+              ]
+              : []),
           ],
         });
+
       } else {
         setChartData({
           labels: [],
@@ -381,7 +397,39 @@ export default function Layout() {
   };
 
 
+  const [predictionData, setPredictionData] = useState<any[]>([]);
 
+  useEffect(() => {
+    const fetchPredictionData = async () => {
+      if (selectedChannel && selectedNodeName) {
+        const payload = {
+          canal: selectedChannel,
+          nodo: selectedNodeName,
+        };
+
+        try {
+          const response = await fetch('http://localhost:5000/api/v1/canal/prediccion', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload),
+          });
+
+          if (!response.ok) {
+            throw new Error(`Error in fetch: ${response.statusText}`);
+          }
+
+          const data = await response.json();
+          setPredictionData(data);
+
+          console.log(data)
+        } catch (error) {
+          console.error('Error fetching prediction data:', error);
+        }
+      }
+    };
+
+    fetchPredictionData();
+  }, [selectedChannel, selectedNodeName]);
 
 
 
@@ -504,7 +552,7 @@ export default function Layout() {
           <div className="flex gap-4 flex-grow">
             <div className="gap-4 flex-grow flex flex-col">
               <div className="rounded-2xl flex-[1.5] w-full shadow-md">
-                <Map />
+                <Map nodes={initialNodeData} />
               </div>
               <div className="rounded-2xl flex-[1] bg-white p-4 shadow-md relative">
                 <div className=''>

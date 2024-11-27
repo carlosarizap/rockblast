@@ -61,6 +61,10 @@ export default function UploadsPage() {
 
                     if (response.ok) {
                         setUploadStatus('Archivo cargado exitosamente!');
+                        // Automatically hide the success message after 3 seconds
+                        setTimeout(() => {
+                            setUploadStatus('');
+                        }, 3000);
                     } else {
                         setUploadStatus('Error al cargar el archivo.');
                     }
@@ -72,6 +76,7 @@ export default function UploadsPage() {
             },
         });
     };
+
 
     return (
         <div className='relative flex h-screen'>
