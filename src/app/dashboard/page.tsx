@@ -87,7 +87,7 @@ const getStatusIcon = (status: string) => {
       return (
         <FontAwesomeIcon
           icon={faCircleArrowUp}
-          className="text-red-500"
+          className="text-orange-500"
           size="lg"
           title="Alto"
         />
@@ -233,6 +233,28 @@ export default function Layout() {
     }
   }, [selectedChannel, waterData]);
 
+  useEffect(() => {
+    const setupSocketListeners = () => {
+      socket.off('alerts'); // Clean up any previous listener
+      socket.on('alerts', (data) => {
+        setAlerts(data.alerts);
+        setIsModalVisible(true);
+      });
+
+      socket.on('connect', () => setIsConnected(true));
+      socket.on('disconnect', () => setIsConnected(false));
+    };
+
+    setupSocketListeners();
+
+    return () => {
+      // Clean up all listeners on unmount
+      socket.off('alerts');
+      socket.off('connect');
+      socket.off('disconnect');
+    };
+  }, []);
+
   // Fetch initial data and setup socket listeners
   useEffect(() => {
     const fetchData = async () => {
@@ -248,7 +270,6 @@ export default function Layout() {
             .then((res) => res.json())
             .then((data) => data.response),
         ]);
-
         setInitialNodeData(initialNodeData);
         setWaterData(initialWaterData);
         setChannels(initialChannelData);
@@ -270,21 +291,27 @@ export default function Layout() {
       });
 
       socket.on('statusCanalData', (data) => {
-        setChannels(data.statusCanal);
+        setChannels((prevChannels) => {
+          // Compare previous and new channel data to avoid redundant updates
+          if (JSON.stringify(prevChannels) !== JSON.stringify(data.statusCanal)) {
+            return data.statusCanal;
+          }
+          return prevChannels;
+        });
       });
 
+
       socket.on('statusNodoData', (data) => {
-        console.log('Nodo status data received:', data);
         setNodeStatusData(data.statusNodo); // Update node status data
       });
 
       socket.on('alerts', (data) => {
-        console.log('Alarm status data received:', data);
         setAlerts(data.alerts); // Update the alerts state
-        console.log('Alarm status data received2 :', data.alerts);
+        if (alerts.length > 0) {
+          setIsModalVisible(true); // Show the modal
 
-        console.log('alerts', alerts)
-        setIsModalVisible(true); // Show the modal
+        }
+
       });
 
       socket.on('connect', () => setIsConnected(true));
@@ -313,8 +340,13 @@ export default function Layout() {
 
 
   useEffect(() => {
-    setWaterDataForChart();
-  }, [waterData, selectedChannel]);
+    if (selectedNode) {
+      setFilteredChannels(channels.filter((channel) => channel.nod_nombre === selectedNode));
+    } else {
+      setFilteredChannels(channels);
+    }
+  }, [selectedNode, channels]); // Dependency array includes channels
+
 
 
   const handleSliderChange = (value: number | number[]) => {
@@ -337,74 +369,74 @@ export default function Layout() {
   const setWaterDataForChart = (data = waterData) => {
     if (selectedChannel) {
       const filteredData = data.filter((item) => item.can_nombre === selectedChannel);
-  
+
       // Extract the last historical point
       const lastHistoricalPoint = filteredData.length > 0
         ? {
-            dbr_fecha: filteredData[filteredData.length - 1].dbr_fecha,
-            cal_cota_pres_corr_poly: parseFloat(filteredData[filteredData.length - 1].cal_cota_pres_corr_poly),
-            isPredicted: false, // Mark as a historical point
-          }
+          dbr_fecha: filteredData[filteredData.length - 1].dbr_fecha,
+          cal_cota_pres_corr_poly: parseFloat(filteredData[filteredData.length - 1].cal_cota_pres_corr_poly),
+          isPredicted: false, // Mark as a historical point
+        }
         : null;
-  
+
       // Prepare predicted data
       const predictedData = predictionData.map((item) => ({
         dbr_fecha: item.Fecha,
         cal_cota_pres_corr_poly: parseFloat(item.Prediccion),
         isPredicted: true,
       }));
-  
+
       // Add mock predicted value (last historical point) to connect datasets
       if (lastHistoricalPoint) {
         predictedData.unshift(lastHistoricalPoint);
       }
-  
+
       // Combine historical and predicted data
       const combinedData = [...filteredData, ...predictedData];
-  
+
       if (combinedData.length > 0) {
         // Slice the combined data based on rangeValues
         const slicedData = combinedData.slice(rangeValues[0], rangeValues[1] + 1);
-  
+
         // Split sliced data into historical and predicted
         const historicalData = slicedData.filter((item) => !('isPredicted' in item));
         const predictedDataRange = slicedData.filter((item) => 'isPredicted' in item);
-  
+
         // Extract labels and values
         const chartLabels = slicedData.map((item) => new Date(item.dbr_fecha).toLocaleDateString());
         const chartValues = historicalData.map((item) =>
           parseFloat(item.cal_cota_pres_corr_poly.toString())
         );
         const smoothedValues = applyMovingAverage(chartValues, 3);
-  
+
         // Predicted values
         const predictedValues = predictedDataRange.map((item) =>
           parseFloat(item.cal_cota_pres_corr_poly.toString())
         );
-  
+
         // Calculate yAxis range
         const minSmoothed = smoothedValues.length > 0 ? Math.min(...smoothedValues) : Infinity;
         const maxSmoothed = smoothedValues.length > 0 ? Math.max(...smoothedValues) : -Infinity;
         const minPredicted = predictedValues.length > 0 ? Math.min(...predictedValues) : Infinity;
         const maxPredicted = predictedValues.length > 0 ? Math.max(...predictedValues) : -Infinity;
-  
+
         const minLevel = Math.min(minSmoothed, minPredicted);
         const maxLevel = Math.max(maxSmoothed, maxPredicted);
-  
+
         // Get Cota Crítica for the selected node
         const node = initialNodeData.find((n) => n.nod_nombre === clickedNode);
         const cotaCritica = node ? node.cota_critica : null;
-  
+
         const padding = 5;
         let newYAxisMin = minLevel - padding;
         let newYAxisMax = maxLevel + padding;
-  
+
         // Ensure cota_critica is included in the yAxis range
         if (cotaCritica !== null) {
           newYAxisMin = Math.min(newYAxisMin, cotaCritica - padding);
           newYAxisMax = Math.max(newYAxisMax, cotaCritica + padding);
         }
-  
+
         // Apply max range limit to prevent overly large Y-axis scaling
         const maxRange = 100; // Define the maximum allowable range
         if (newYAxisMax - newYAxisMin > maxRange) {
@@ -412,15 +444,15 @@ export default function Layout() {
           newYAxisMin = center - maxRange / 2;
           newYAxisMax = center + maxRange / 2;
         }
-  
+
         // Update the Y-axis range
         setYAxisRange({ min: newYAxisMin, max: newYAxisMax });
-  
+
         // Extend Cota Crítica line
         const cotaCriticaData = cotaCritica !== null
           ? new Array(chartLabels.length).fill(cotaCritica)
           : [];
-  
+
         // Set the chart data
         setChartData({
           labels: chartLabels,
@@ -437,31 +469,31 @@ export default function Layout() {
             },
             ...(cotaCritica !== null
               ? [
-                  {
-                    label: 'Cota Crítica',
-                    data: cotaCriticaData, // Extend the red line across the range
-                    borderColor: 'red',
-                    borderWidth: 2,
-                    fill: false,
-                    pointBackgroundColor: 'red',
-                    pointRadius: 0,
-                    tension: 0,
-                  },
-                ]
+                {
+                  label: 'Cota Crítica',
+                  data: cotaCriticaData, // Extend the red line across the range
+                  borderColor: 'red',
+                  borderWidth: 2,
+                  fill: false,
+                  pointBackgroundColor: 'red',
+                  pointRadius: 0,
+                  tension: 0,
+                },
+              ]
               : []),
             ...(predictedValues.length > 0
               ? [
-                  {
-                    label: 'Predicción',
-                    data: smoothedValues.concat(predictedValues), // Connect predictions to historical data
-                    borderColor: '#e1ad01',
-                    borderWidth: 3,
-                    fill: false,
-                    pointBackgroundColor: '#e1ad01',
-                    pointRadius: 0,
-                    tension: 0.5,
-                  },
-                ]
+                {
+                  label: 'Predicción',
+                  data: smoothedValues.concat(predictedValues), // Connect predictions to historical data
+                  borderColor: '#e1ad01',
+                  borderWidth: 3,
+                  fill: false,
+                  pointBackgroundColor: '#e1ad01',
+                  pointRadius: 0,
+                  tension: 0.5,
+                },
+              ]
               : []),
           ],
         });
@@ -474,7 +506,7 @@ export default function Layout() {
       }
     }
   };
-  
+
 
 
 
@@ -723,7 +755,7 @@ export default function Layout() {
                 <ul className="space-y-2">
                   {filteredChannels.map((channel) => (
                     <li
-                      key={channel.can_id}
+                      key={channel.can_nombre}
                       className={`flex items-start gap-2 cursor-pointer p-4 rounded-lg shadow-sm hover:bg-gray-200 transition-all ${selectedChannel === channel.can_nombre ? 'bg-gray-300' : 'bg-gray-100'
                         }`}
                       onClick={() => {
