@@ -31,6 +31,7 @@ import {
   faCheck,
   faThermometer,
   faCircle,
+  faCircleMinus,
 } from '@fortawesome/free-solid-svg-icons';
 import {
   faCircleExclamation,
@@ -69,7 +70,7 @@ const getStatusIcon = (status: string) => {
       return (
         <FontAwesomeIcon
           icon={faCircleArrowDown}
-          className="text-blue-500"
+          className="text-green-500"
           size="lg"
           title="Bajo"
         />
@@ -77,8 +78,8 @@ const getStatusIcon = (status: string) => {
     case 'medio':
       return (
         <FontAwesomeIcon
-          icon={faCircleCheck}
-          className="text-green-500"
+          icon={faCircleMinus}
+          className="text-yellow-500"
           size="lg"
           title="Medio"
         />
@@ -95,7 +96,7 @@ const getStatusIcon = (status: string) => {
     case 'critico':
       return (
         <FontAwesomeIcon
-          icon={faCircleArrowUp}
+          icon={faCircleExclamation}
           className="text-red-500"
           size="lg"
           title="Critico"
