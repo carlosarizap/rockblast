@@ -366,7 +366,6 @@ export default function Layout() {
       setFilteredChannels(channels);
     }
   }, [selectedNode, channels]);
-
   const setWaterDataForChart = (data = waterData) => {
     if (selectedChannel) {
       const filteredData = data.filter((item) => item.can_nombre === selectedChannel);
@@ -376,7 +375,7 @@ export default function Layout() {
         ? {
           dbr_fecha: filteredData[filteredData.length - 1].dbr_fecha,
           cal_cota_pres_corr_poly: parseFloat(filteredData[filteredData.length - 1].cal_cota_pres_corr_poly),
-          isPredicted: false, // Mark as a historical point
+          isPredicted: false,
         }
         : null;
 
@@ -387,7 +386,7 @@ export default function Layout() {
         isPredicted: true,
       }));
 
-      // Add mock predicted value (last historical point) to connect datasets
+      // Add last historical point to predicted data
       if (lastHistoricalPoint) {
         predictedData.unshift(lastHistoricalPoint);
       }
@@ -396,65 +395,51 @@ export default function Layout() {
       const combinedData = [...filteredData, ...predictedData];
 
       if (combinedData.length > 0) {
-        // Slice the combined data based on rangeValues
         const slicedData = combinedData.slice(rangeValues[0], rangeValues[1] + 1);
-
-        // Split sliced data into historical and predicted
         const historicalData = slicedData.filter((item) => !('isPredicted' in item));
         const predictedDataRange = slicedData.filter((item) => 'isPredicted' in item);
 
-        // Extract labels and values
         const chartLabels = slicedData.map((item) => new Date(item.dbr_fecha).toLocaleDateString());
         const chartValues = historicalData.map((item) =>
           parseFloat(item.cal_cota_pres_corr_poly.toString())
         );
         const smoothedValues = applyMovingAverage(chartValues, 3);
 
-        // Predicted values
         const predictedValues = predictedDataRange.map((item) =>
           parseFloat(item.cal_cota_pres_corr_poly.toString())
         );
 
-        // Calculate yAxis range
-        const minSmoothed = smoothedValues.length > 0 ? Math.min(...smoothedValues) : Infinity;
-        const maxSmoothed = smoothedValues.length > 0 ? Math.max(...smoothedValues) : -Infinity;
-        const minPredicted = predictedValues.length > 0 ? Math.min(...predictedValues) : Infinity;
-        const maxPredicted = predictedValues.length > 0 ? Math.max(...predictedValues) : -Infinity;
+        const minLevel = Math.min(...smoothedValues, ...predictedValues);
+        const maxLevel = Math.max(...smoothedValues, ...predictedValues);
 
-        const minLevel = Math.min(minSmoothed, minPredicted);
-        const maxLevel = Math.max(maxSmoothed, maxPredicted);
-
-        // Get Cota Crítica for the selected node
+        // Include alarm level logic
         const node = initialNodeData.find((n) => n.nod_nombre === clickedNode);
         const cotaCritica = node ? node.cota_critica : null;
+        const threshold = 50; // Define the maximum allowable distance for alarm level to show
 
-        const padding = 5;
-        let newYAxisMin = minLevel - padding;
-        let newYAxisMax = maxLevel + padding;
+        let yAxisMin = minLevel - 5;
+        let yAxisMax = maxLevel + 5;
 
-        // Ensure cota_critica is included in the yAxis range
+        let showCotaCritica = false;
+
         if (cotaCritica !== null) {
-          newYAxisMin = Math.min(newYAxisMin, cotaCritica - padding);
-          newYAxisMax = Math.max(newYAxisMax, cotaCritica + padding);
+          const waterExceedsAlarm = maxLevel > cotaCritica;
+          const withinThreshold = Math.abs(cotaCritica - minLevel) <= threshold || Math.abs(cotaCritica - maxLevel) <= threshold;
+
+          if (waterExceedsAlarm || withinThreshold) {
+            showCotaCritica = true;
+            yAxisMin = Math.min(yAxisMin, cotaCritica - 5);
+            yAxisMax = Math.max(yAxisMax, cotaCritica + 5);
+          }
         }
 
-        // Apply max range limit to prevent overly large Y-axis scaling
-        const maxRange = 100; // Define the maximum allowable range
-        if (newYAxisMax - newYAxisMin > maxRange) {
-          const center = (newYAxisMin + newYAxisMax) / 2;
-          newYAxisMin = center - maxRange / 2;
-          newYAxisMax = center + maxRange / 2;
-        }
+        // Update Y-axis range
+        setYAxisRange({ min: yAxisMin, max: yAxisMax });
 
-        // Update the Y-axis range
-        setYAxisRange({ min: newYAxisMin, max: newYAxisMax });
-
-        // Extend Cota Crítica line
-        const cotaCriticaData = cotaCritica !== null
+        const cotaCriticaData = showCotaCritica
           ? new Array(chartLabels.length).fill(cotaCritica)
           : [];
 
-        // Set the chart data
         setChartData({
           labels: chartLabels,
           datasets: [
@@ -468,11 +453,11 @@ export default function Layout() {
               pointRadius: 0,
               tension: 0.5,
             },
-            ...(cotaCritica !== null
+            ...(showCotaCritica
               ? [
                 {
                   label: 'Cota Crítica',
-                  data: cotaCriticaData, // Extend the red line across the range
+                  data: cotaCriticaData,
                   borderColor: 'red',
                   borderWidth: 2,
                   fill: false,
@@ -486,7 +471,7 @@ export default function Layout() {
               ? [
                 {
                   label: 'Predicción',
-                  data: smoothedValues.concat(predictedValues), // Connect predictions to historical data
+                  data: smoothedValues.concat(predictedValues),
                   borderColor: '#e1ad01',
                   borderWidth: 3,
                   fill: false,
@@ -499,7 +484,6 @@ export default function Layout() {
           ],
         });
       } else {
-        // Reset the chart data if no data is available
         setChartData({
           labels: [],
           datasets: [],
@@ -507,6 +491,7 @@ export default function Layout() {
       }
     }
   };
+
 
 
 
@@ -605,12 +590,12 @@ export default function Layout() {
         titleFont: {
           family: "'Poppins', sans-serif",
           size: 14,
-          weight: 600, // Corrected to a number
+          weight: 600,
         },
         bodyFont: {
           family: "'Poppins', sans-serif",
           size: 12,
-          weight: 400, // Corrected to a number
+          weight: 400,
         },
       },
     },
@@ -622,7 +607,7 @@ export default function Layout() {
           font: {
             family: "'Poppins', sans-serif",
             size: 16,
-            weight: 500, // Corrected to a number
+            weight: 500,
           },
         },
         ticks: {
@@ -635,15 +620,15 @@ export default function Layout() {
         },
       },
       y: {
-        min: yAxisRange.min, // Dynamically adjust the min
-        max: yAxisRange.max, // Dynamically adjust the max
+        min: yAxisRange.min,
+        max: yAxisRange.max,
         title: {
           display: true,
-          text: 'Nivel',
+          text: 'Nivel', // Add "(m)" to the title to indicate meters
           font: {
             family: "'Poppins', sans-serif",
             size: 16,
-            weight: 500, // Corrected to a number
+            weight: 500,
           },
         },
         ticks: {
@@ -651,10 +636,15 @@ export default function Layout() {
             family: "'Poppins', sans-serif",
             size: 12,
           },
+          callback: function (value) {
+            const numericValue = typeof value === 'number' ? value : parseFloat(value as string);
+            return `${numericValue.toFixed(0)} m`;
+          },
         },
       },
     },
   };
+  
 
 
 
@@ -722,11 +712,29 @@ export default function Layout() {
 
                   </div>
 
-                  <h3 className="text-lg font-semibold mb-4 text-custom-blue">
+                  <h3 className="text-lg font-semibold text-custom-blue">
                     {selectedChannel && selectedNodeName
                       ? `Nodo: ${selectedNodeName} - Canal: ${selectedChannel}`
                       : 'Seleccione un canal'}
                   </h3>
+                  <span className="font-semibold  text-red-600 text-xs">
+                    {selectedChannel && selectedNodeName
+                      ? (() => {
+                        // Find the node in the initialNodeData array
+                        const selectedNodeData = initialNodeData.find(
+                          (node) => node.nod_nombre === selectedNodeName
+                        );
+
+                        // Extract cotaCritica if available
+                        const cotaCritica = selectedNodeData?.cota_critica;
+
+                        // Render Cota Crítica value if it exists
+                        return cotaCritica
+                          ? `Cota Crítica: ${cotaCritica.toFixed(2)} m`
+                          : 'Cota Crítica no disponible';
+                      })()
+                      : 'Seleccione un canal'}
+                  </span>
                 </div>
 
                 <div className='mt-5' style={{ height: '200px', width: '100%' }}>
