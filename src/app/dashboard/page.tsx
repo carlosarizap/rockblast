@@ -756,8 +756,8 @@ export default function Layout() {
                       <button
                         onClick={() => setIsPredictionRequested(true)}
                         className={`px-2 py-1 text-xs rounded shadow ${isPredicting
-                            ? 'bg-gray-400 cursor-not-allowed'
-                            : 'bg-yellow-500 hover:bg-yellow-600'
+                          ? 'bg-gray-400 cursor-not-allowed'
+                          : 'bg-yellow-500 hover:bg-yellow-600'
                           }`}
                         disabled={isPredicting} // Desactiva el botón mientras carga
                       >
@@ -877,35 +877,35 @@ export default function Layout() {
               <h4 className="text-xl font-bold mb-4 text-gray-800">
                 Notificación de Alerta
               </h4>
-              <ul className="space-y-4">
-                {/* Check if alerts is an array and has data */}
-                {Array.isArray(alerts) && alerts.length > 0 ? (
-                  alerts.map((alert, index) => {
-                    const { color, icon } = getAlertTypeStyle(alert.tipo_alerta);
-                    return (
-                      <li
-                        key={index}
-                        className={`flex items-center gap-2 p-2 rounded-md shadow-md ${color}`}
-                      >
-                        <FontAwesomeIcon icon={icon} className="text-lg" />
-                        <div>
-                          <p className="font-semibold text-sm">
-                            {alert.tipo_alerta}
-                          </p>
-                          <p className="text-xs text-gray-600">
-                            {`Canal: ${alert.can_nombre}, Nodo: ${alert.nod_nombre}`}
-                          </p>
-                          <p className="text-xs text-gray-600">
-                            Fecha: {new Date(alert.dbr_fecha).toLocaleString()}
-                          </p>
-                        </div>
-                      </li>
-                    );
-                  })
-                ) : (
-                  <p className="text-gray-500 text-sm">No hay alertas disponibles.</p>
-                )}
-              </ul>
+              <div className="overflow-y-auto max-h-96 pr-2 custom-scrollbar">
+                <ul className="space-y-4">
+                  {/* Check if alerts is an array and has data */}
+                  {Array.isArray(alerts) && alerts.length > 0 ? (
+                    alerts.map((alert, index) => {
+                      const { color, icon } = getAlertTypeStyle(alert.tipo_alerta);
+                      return (
+                        <li
+                          key={index}
+                          className={`flex items-center gap-2 p-2 rounded-md shadow-md ${color}`}
+                        >
+                          <FontAwesomeIcon icon={icon} className="text-lg" />
+                          <div>
+                            <p className="font-semibold text-sm">{alert.tipo_alerta}</p>
+                            <p className="text-xs text-gray-600">
+                              {`Canal: ${alert.can_nombre}, Nodo: ${alert.nod_nombre}`}
+                            </p>
+                            <p className="text-xs text-gray-600">
+                              Fecha: {new Date(alert.dbr_fecha).toLocaleString()}
+                            </p>
+                          </div>
+                        </li>
+                      );
+                    })
+                  ) : (
+                    <p className="text-gray-500 text-sm">No hay alertas disponibles.</p>
+                  )}
+                </ul>
+              </div>
               <div className="mt-4 flex justify-end">
                 <button
                   onClick={() => setIsModalVisible(false)}
@@ -917,6 +917,7 @@ export default function Layout() {
             </div>
           </div>
         )}
+
 
       </div>
     </div>
