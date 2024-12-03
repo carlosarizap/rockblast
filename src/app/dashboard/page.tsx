@@ -171,6 +171,8 @@ export default function Layout() {
   const [clickedNode, setClickedNode] = useState<string | null>(null); // For channel clicks
   const [alerts, setAlerts] = useState<any[]>([]); // State to store alerts
   const [isModalVisible, setIsModalVisible] = useState(false);
+  const [isPredictionRequested, setIsPredictionRequested] = useState(false);
+  const [isPredicting, setIsPredicting] = useState(false);
 
   const [chartData, setChartData] = useState({
     labels: [] as string[],
@@ -496,15 +498,16 @@ export default function Layout() {
 
 
 
-
-
-
-
   const [predictionData, setPredictionData] = useState<any[]>([]);
+
+
+
+
 
   useEffect(() => {
     const fetchPredictionData = async () => {
-      if (selectedChannel && selectedNodeName) {
+      if (selectedChannel && selectedNodeName && isPredictionRequested) {
+        setIsPredicting(true); // Start loading
         const payload = {
           canal: selectedChannel,
           nodo: selectedNodeName,
@@ -525,15 +528,25 @@ export default function Layout() {
           setPredictionData(data);
         } catch (error) {
           console.error('Error fetching prediction data:', error);
+        } finally {
+          setIsPredicting(false); // Stop loading
+          setIsPredictionRequested(false); // Reset after fetch
         }
       }
     };
 
     fetchPredictionData();
-  }, [selectedChannel, selectedNodeName]);
+  }, [selectedChannel, selectedNodeName, isPredictionRequested]);
 
 
 
+
+
+  useEffect(() => {
+    if (predictionData.length > 0) {
+      setIsPredictionRequested(false);
+    }
+  }, [predictionData]);
 
 
   const updateChartData = (data: { date: Date; polyValue: number }[]) => {
@@ -644,7 +657,7 @@ export default function Layout() {
       },
     },
   };
-  
+
 
 
 
@@ -664,7 +677,7 @@ export default function Layout() {
                 <div className=''>
                   <div className="absolute top-3 right-4 bg-gray-100 rounded-xl py-2 px-4" style={{ width: '55%' }}>
                     {/* Container for the date indicators */}
-                    <div className="flex justify-between mb-1 text-xs text-gray-600">
+                    <div className="flex justify-between text-xs text-gray-600">
                       {(() => {
                         // Combine historical and predicted data for date calculation
                         const combinedData = [
@@ -710,6 +723,8 @@ export default function Layout() {
                       railStyle={{ backgroundColor: '#b0bec5' }}
                     />
 
+
+
                   </div>
 
                   <h3 className="text-lg font-semibold text-custom-blue">
@@ -717,24 +732,63 @@ export default function Layout() {
                       ? `Nodo: ${selectedNodeName} - Canal: ${selectedChannel}`
                       : 'Seleccione un canal'}
                   </h3>
-                  <span className="font-semibold  text-red-600 text-xs">
-                    {selectedChannel && selectedNodeName
-                      ? (() => {
-                        // Find the node in the initialNodeData array
-                        const selectedNodeData = initialNodeData.find(
-                          (node) => node.nod_nombre === selectedNodeName
-                        );
+                  <div className="flex items-center">
+                    <span className="font-semibold text-red-600 text-xs mr-2">
+                      {selectedChannel && selectedNodeName
+                        ? (() => {
+                          // Encuentra el nodo en los datos iniciales
+                          const selectedNodeData = initialNodeData.find(
+                            (node) => node.nod_nombre === selectedNodeName
+                          );
 
-                        // Extract cotaCritica if available
-                        const cotaCritica = selectedNodeData?.cota_critica;
+                          // Extrae cotaCritica si está disponible
+                          const cotaCritica = selectedNodeData?.cota_critica;
 
-                        // Render Cota Crítica value if it exists
-                        return cotaCritica
-                          ? `Cota Crítica: ${cotaCritica.toFixed(2)} m`
-                          : 'Cota Crítica no disponible';
-                      })()
-                      : 'Seleccione un canal'}
-                  </span>
+                          // Renderiza el valor de Cota Crítica si existe
+                          return cotaCritica
+                            ? `Cota Crítica: ${cotaCritica.toFixed(2)} m`
+                            : 'Cota Crítica no disponible';
+                        })()
+                        : ''}
+                    </span>
+
+                    {selectedChannel && (
+                      <button
+                        onClick={() => setIsPredictionRequested(true)}
+                        className={`px-2 py-1 text-xs rounded shadow ${isPredicting
+                            ? 'bg-gray-400 cursor-not-allowed'
+                            : 'bg-yellow-500 hover:bg-yellow-600'
+                          }`}
+                        disabled={isPredicting} // Desactiva el botón mientras carga
+                      >
+                        {isPredicting ? (
+                          <svg
+                            className="animate-spin h-4 w-4 text-white"
+                            xmlns="http://www.w3.org/2000/svg"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                          >
+                            <circle
+                              className="opacity-25"
+                              cx="12"
+                              cy="12"
+                              r="10"
+                              stroke="currentColor"
+                              strokeWidth="4"
+                            ></circle>
+                            <path
+                              className="opacity-75"
+                              fill="currentColor"
+                              d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
+                            ></path>
+                          </svg>
+                        ) : (
+                          'Predecir'
+                        )}
+                      </button>
+                    )}
+                  </div>
+
                 </div>
 
                 <div className='mt-5' style={{ height: '200px', width: '100%' }}>
@@ -771,6 +825,8 @@ export default function Layout() {
                         setSelectedChannel(channel.can_nombre);
                         setSelectedNodeName(channel.nod_nombre);
                         setClickedNode(channel.nod_nombre);
+                        setPredictionData([]); // Clear prediction data
+                        setIsPredictionRequested(false); // Reset prediction state
                       }}
                     >
                       {/* Custom Blue Circle Icon */}
@@ -829,7 +885,7 @@ export default function Layout() {
                     return (
                       <li
                         key={index}
-                        className={`flex items-center gap-4 p-4 rounded-md shadow-md ${color}`}
+                        className={`flex items-center gap-2 p-2 rounded-md shadow-md ${color}`}
                       >
                         <FontAwesomeIcon icon={icon} className="text-lg" />
                         <div>
